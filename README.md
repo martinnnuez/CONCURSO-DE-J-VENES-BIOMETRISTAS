@@ -41,7 +41,11 @@ Se realizó un ensayo comparativo multiambiental en el que se evaluaron 13 culti
 ### Preguntas para nivel de posgrado:
 
 **1)** ¿Cuáles cultivares de colza presentan mayor contenido de ácido linolénico y menor contenido de ácidos grasos saturados?
+
 **2)** ¿Cómo agruparía los cultivares con base en la similitud del perfil de ácidos grasos, tocoferoles e índice de estabilidad?
+
 **3)** ¿El contenido de ácido linolénico se ve afectado por la temperatura durante el periodo entre el inicio de floración y la madurez fisiológica (IF-MF)?
+
 **4)** Para cada uno de los componentes del grano medido, ¿cuál de los factores (cultivar o ambiente) aporta mayor variación? ¿Existe interacción genotipo-ambiente? ¿Qué cultivar/es recomendaría en sentido amplio o sitio específico?
+
 **5)** ¿Qué factores del clima explican la interacción cultivar-ambiente para el contenido de ácido linolénico?
