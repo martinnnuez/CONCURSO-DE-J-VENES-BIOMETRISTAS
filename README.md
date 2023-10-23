@@ -6,9 +6,9 @@
 
 ***Edición 2023*** 
 
-Comparto el trabajo por medio del cual obtuvimos el primer puesto en el CONCURSO DE JÓVENES BIOMETRISTAS, llevado a cabo por el Grupo Argentino de Bioestadística (GAB) en el contexto de la XXVII Reunión Científica del GAB desde el 10 al 12 de octubre de 2023 en la Facultad de Ciencias Naturales de la Universidad Nacional de Salta.
+Comparto el trabajo por medio del cual obtuvimos el primer puesto en el CONCURSO DE JÓVENES BIOMETRISTAS, llevado a cabo por el [Grupo Argentino de Bioestadística (GAB)](https://gab.com.ar/reunion-2023/) en el contexto de la XXVII Reunión Científica del GAB desde el 10 al 12 de octubre de 2023 en la Facultad de Ciencias Naturales de la Universidad Nacional de Salta.
 
-## Grupo Argentino de Bioestadística (GAB)
+## [Grupo Argentino de Bioestadística (GAB)](https://gab.com.ar/reunion-2023/)
 
 La XXVII Reunión Científica del GAB está dirigida a todos los docentes, investigadores y estudiantes interesados en la aplicación de la Estadística en las biociencias, abarcando áreas como biología, agronomía, medicina y medio ambiente, entre otras.
 
