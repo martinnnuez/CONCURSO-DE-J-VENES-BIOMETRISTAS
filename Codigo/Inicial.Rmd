@@ -1,0 +1,930 @@
+---
+title: "Inicio"
+author: "Rodriguez Nuñez Martin"
+date: "2023-06-07"
+output: html_document
+---
+
+```{r, echo=F,message=F,warning=F}
+library(tidyverse)
+library(lubridate)
+library(readxl)
+library(reshape2)
+
+# Importo base de datos:
+cond_clim<- read_excel("datos/condiciones_climaticas.xlsx")
+proc_quim<- read_excel("datos/perfiles_quimicos.xlsx")
+
+proc_quim <-  rename(proc_quim,"Ambiente"="Localidad")
+
+datos <- merge(proc_quim, cond_clim, by.x=c("Ambiente", "Cultivar"), by.y=c("Ambiente", "Cultivar"), all.x = TRUE)
+
+datos <- datos[!duplicated(datos), ]
+
+datos$Palmitoleic_Acid<-as.numeric(datos$Palmitoleic_Acid)
+
+datos<- datos %>%
+  group_by(Ambiente, Cultivar, Repetición, inicio_de_floración_IF, Madurez_fisiologica_MF) %>%
+  summarise(across(everything(), list(mean))) %>% 
+  ungroup() %>% 
+  rename_with(~str_remove(.x, "\\_1$"))
+
+datos<-datos[-c(34,36),]
+
+# Incluyo datos de rendimiento
+datos$Palmitic_Acid_r <-  (datos$Palmitic_Acid*datos$Oil_content)/100
+datos$Palmitoleic_Acid_r <-  (datos$Palmitoleic_Acid*datos$Oil_content)/100
+datos$Stearic_Acid_r <-  (datos$Stearic_Acid*datos$Oil_content)/100
+datos$Oleic_Acid_r <-  (datos$Oleic_Acid*datos$Oil_content)/100
+datos$Linoleic_Acid_r <-  (datos$Linoleic_Acid*datos$Oil_content)/100
+datos$Linolenic_Acid_r <-  (datos$Linolenic_Acid*datos$Oil_content)/100
+datos$Arachidic_Acid_r <-  (datos$Arachidic_Acid*datos$Oil_content)/100
+datos$Ecosenoic_Acid_r <-  (datos$Ecosenoic_Acid*datos$Oil_content)/100
+
+## Creacion de variables con aceites 
+datos$ac_insat <-  datos$Oleic_Acid + datos$Linoleic_Acid +datos$Linolenic_Acid + datos$Ecosenoic_Acid
+datos$ac_sat <- datos$Palmitic_Acid + datos$Palmitoleic_Acid + datos$Stearic_Acid + datos$Arachidic_Acid
+
+## total prodducion acidos insat
+datos$tot_acinsat_r <- (datos$ac_insat/100)*datos$Oil_content
+datos$tot_acsat_r <- (datos$ac_sat/100)*datos$Oil_content
+
+nulllist <- map(colnames(proc_quim),function(x){
+  nullvalues <- sum(is.na(datos[[x]]))
+  if(nullvalues > 0 ){
+    print(paste0(x,' tiene: ',nullvalues, ' valores faltantes'))
+  }
+})
+remove_space <- gsub('-','_',names(datos))
+colnames(datos) <- gsub(' ','',remove_space)
+
+# Verificación 
+# print(datos$Palmitic_Acid +  datos$Palmitoleic_Acid +datos$Stearic_Acid + datos$Oleic_Acid+  datos$Linoleic_Acid+  datos$Linolenic_Acid+datos$Arachidic_Acid+ datos$Ecosenoic_Acid)
+# print(datos$Oil_content)
+
+nrow(datos)
+ncol(datos)
+table(datos$Cultivar)
+
+# write.csv(datos,"C:/Users/marti/Desktop/GAB2023/datos.csv", row.names=FALSE)
+```
+<!-- LOC_1 + CV_9 -->
+<!-- LOC_2 + CV_12 -->
+<!-- LOC_4 + CV_6 -->
+
+<!--   Ahora entiendo porque me daba 110, tengo que borrar algunos datos -->
+
+<!--   Además hay un dato que esta mal escrito LOC_2 + CV_12 2004.0 y es 200.4 -->
+
+<!--   Ya lo solucione y me quedan los datos bien -->
+
+## Preguntamos dia reunion gab:
+
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+table(datos$Fecha_de_siembra_S)
+
+table(datos$inicio_de_floración_IF)
+
+table(datos$Madurez_fisiologica_MF)
+
+table(datos$`Dur_S-IF`)
+
+unique(table(datos$`Dur_IF-MF`))
+table(datos$`Dur_IF-MF`)
+```
+  Tenemos 4 fechas de siembra. 
+  
+  
+
+# Distribuciones
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+# library(GGally)
+# pairs(datos[,-c(1,2,29)], pch=19, col='orange', lower.panel=panel.smooth)
+# ggpairs(datos[,-c(1,2,29)])
+names(datos)
+```
+Preguntas para nivel de posgrado:
+
+# 1) ¿Cuáles cultivares de colza presentan mayor contenido de ácido linolénico y menor contenido de ácidos grasos saturados?
+  
+  Completar con visualizaciones y análisis exploratorio. 
+  Además chequear supuestos para ANAVA.
+  
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+print("Acido linolenico")
+datos %>% 
+  group_by(Cultivar) %>% 
+  summarise(Linolenic_Acid=mean(Linolenic_Acid)) %>% 
+  arrange(desc(Linolenic_Acid))
+
+datos$ac_sat<- datos$Palmitic_Acid+datos$Palmitoleic_Acid+datos$Stearic_Acid+datos$Arachidic_Acid
+
+print("Acidos grasos saturados")
+datos %>% 
+  group_by(Cultivar) %>% 
+  summarise(Suma_sat=mean(ac_sat)) %>% 
+  arrange(desc(Suma_sat))
+```
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+# library(postHoc)
+model <- aov(Linolenic_Acid ~ Cultivar + Ambiente, data = datos)
+# model2 <- lm(Linolenic_Acid ~ Cultivar + Ambiente, data = datos)
+summary(model)
+
+# comp <- TukeyHSD(model, "Cultivar")
+# 
+# print(comp)
+# 
+# TT <- posthoc(Model = model2)
+# summary(TT)
+# 
+# # Añadir las letras al conjunto de datos
+# datos$letras_cultivar <- letras
+# 
+# # Mostrar los resultados del análisis a posteriori
+# print(comparaciones_tukey)
+
+# model <- lm(Linolenic_Acid ~ Cultivar + Ambiente, data = datos)
+# anova(model)
+```
+  Hay diferencias significativas, es decir una de las medias es distinta de las demas, haciendo el análisis a posteriori derivado de clusterizacion DGC, es decir que no es clasico, obtengo que el unico que logra diferenciarse de los demas es el cultivar 2. Y que si fue significativo bloquear por zona. 
+
+Todos los otros A
+CV_2 B
+
+### Palmitic_Acid (Ácido palmítico)
+
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+model <- aov(Palmitic_Acid ~ Cultivar + Ambiente, data = datos)
+summary(model)
+```
+  No hay diferencias significativas por cultivar. 
+
+### Stearic_Acid (Ácido esteárico)
+
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+model <- aov(Stearic_Acid ~ Cultivar + Ambiente, data = datos)
+summary(model)
+```
+  Hay diferencias significativas, 
+  El que menor contenido tiene es el cv_8. A
+  Todos los del medio iguales. B
+  y los uqe mas con el cv_7 y el cv_9. C 
+  
+### Arachidic_Acid (Ácido araquídico)
+
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+model <- aov(Arachidic_Acid ~ Cultivar + Ambiente, data = datos)
+summary(model)
+```
+No hay diferencias significativas. 
+
+### Ecosenoic_Acid (Ácido ecosanoico)
+
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+model <- aov(Ecosenoic_Acid ~ Cultivar + Ambiente, data = datos)
+summary(model)
+```
+No hay diferencias significativas. 
+
+# 2) ¿Cómo agruparía los cultivares con base en la similitud del perfil de ácidos grasos, tocoferoles e índice de estabilidad?
+
+### Clustering jerarquico
+
+#### Distancia euclideana
+
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+# Aislamos datos
+# names(datos)
+data_cluster <- datos[, c("a_Tocopherol","g_Tocopherol","d_Tocopherol","a_g_d_Tocopherol","Palmitic_Acid","Palmitoleic_Acid","Stearic_Acid","Oleic_Acid","Linoleic_Acid", "Linolenic_Acid","Arachidic_Acid","Ecosenoic_Acid","OSI","Oil_content")]
+cultivar_labels <- datos$Cultivar 
+
+# Estandarizar los datos
+data_cluster_std <- scale(data_cluster)
+
+# Ajustar el algoritmo de Clustering Hierárquico
+dist_matrix <- dist(data_cluster_std)  # Calcular la matriz de distancias
+hclust_result <- hclust(dist_matrix)  # Aplicar el algoritmo de clustering jerárquico
+
+# Graficar el dendrograma resultante
+plot(hclust_result, main = "Dendrograma de Clustering Hierárquico", labels = cultivar_labels)
+```
+
+  A partir de este gráfico y los resultados previos me doy cuenta que tener en cuenta la localidad es importante por lo tanto creare los clusteres para cada una de las localidades por separado. 
+
+##### Localidad 1
+
+En primera instancia no calculare los promedios entre ambas repeticiones y me fijare si las agrupa relativamente juntas a todas ellas. 
+
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+# Aislamos datos
+# names(datos)
+
+loc <- datos %>% 
+  filter(Ambiente=="Loc_1")
+
+data_cluster <- loc[, c("a_Tocopherol","g_Tocopherol","d_Tocopherol","a_g_d_Tocopherol","Palmitic_Acid","Palmitoleic_Acid","Stearic_Acid","Oleic_Acid","Linoleic_Acid", "Linolenic_Acid","Arachidic_Acid","Ecosenoic_Acid","OSI","Oil_content")]
+cultivar_labels <- loc$Cultivar 
+
+# Estandarizar los datos
+data_cluster_std <- scale(data_cluster)
+
+# Ajustar el algoritmo de Clustering Hierárquico
+dist_matrix <- dist(data_cluster_std)  # Calcular la matriz de distancias
+hclust_result <- hclust(dist_matrix)  # Aplicar el algoritmo de clustering jerárquico
+
+# Graficar el dendrograma resultante
+plot(hclust_result, main = "Dendrograma de Clustering Hierárquico", labels = cultivar_labels)
+```
+  Hay mucha variabilidad en las repeticiones, ni si quiera se unen entre ellas, es decir que las repeticiones difieren notablemente entre ellas. 
+  
+  No solo el valor de los componentes del acido dependen de la localidad, si no que tambien de la repetición que se haya realizado. 
+  
+  Me tienta calcular la media entre las dos y ahi agruparlos, pero me hace dudar un poco. 
+
+Calculo la media y vuelvo a cluterizar para analizar:
+
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+# Aislamos datos
+# names(datos)
+
+loc <- datos %>% 
+  filter(Ambiente=="Loc_1") %>% 
+  group_by(Cultivar) %>%   
+  summarise(across(everything(), list(mean))) %>% 
+  ungroup() %>% 
+  rename_with(~str_remove(.x, "\\_1$"))
+  
+
+data_cluster <- loc[, c("a_Tocopherol","g_Tocopherol","d_Tocopherol","a_g_d_Tocopherol","Palmitic_Acid","Palmitoleic_Acid","Stearic_Acid","Oleic_Acid","Linoleic_Acid", "Linolenic_Acid","Arachidic_Acid","Ecosenoic_Acid","OSI","Oil_content")]
+cultivar_labels <- loc$Cultivar 
+
+# Estandarizar los datos
+data_cluster_std <- scale(data_cluster)
+
+# Ajustar el algoritmo de Clustering Hierárquico
+dist_matrix <- dist(data_cluster_std)  # Calcular la matriz de distancias
+hclust_result <- hclust(dist_matrix)  # Aplicar el algoritmo de clustering jerárquico
+
+# Graficar el dendrograma resultante
+plot(hclust_result, main = "Dendrograma de Clustering Hierárquico", labels = cultivar_labels)
+```
+  A partir de este grafico podría cortar en 4 grupos, voy a analizar las demas localidades
+  
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+# Aislamos datos
+# names(datos)
+
+loc <- datos %>% 
+  filter(Ambiente=="Loc_2") %>% 
+  group_by(Cultivar) %>%   
+  summarise(across(everything(), list(mean))) %>% 
+  ungroup() %>% 
+  rename_with(~str_remove(.x, "\\_1$"))
+  
+
+data_cluster <- loc[, c("a_Tocopherol","g_Tocopherol","d_Tocopherol","a_g_d_Tocopherol","Palmitic_Acid","Palmitoleic_Acid","Stearic_Acid","Oleic_Acid","Linoleic_Acid", "Linolenic_Acid","Arachidic_Acid","Ecosenoic_Acid","OSI","Oil_content")]
+cultivar_labels <- loc$Cultivar 
+
+# Estandarizar los datos
+data_cluster_std <- scale(data_cluster)
+
+# Ajustar el algoritmo de Clustering Hierárquico
+dist_matrix <- dist(data_cluster_std)  # Calcular la matriz de distancias
+hclust_result <- hclust(dist_matrix)  # Aplicar el algoritmo de clustering jerárquico
+
+# Graficar el dendrograma resultante
+plot(hclust_result, main = "Dendrograma de Clustering Hierárquico", labels = cultivar_labels)
+```
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+# Aislamos datos
+# names(datos)
+
+loc <- datos %>% 
+  filter(Ambiente=="Loc_3") %>% 
+  group_by(Cultivar) %>%   
+  summarise(across(everything(), list(mean))) %>% 
+  ungroup() %>% 
+  rename_with(~str_remove(.x, "\\_1$"))
+  
+
+data_cluster <- loc[, c("a_Tocopherol","g_Tocopherol","d_Tocopherol","a_g_d_Tocopherol","Palmitic_Acid","Palmitoleic_Acid","Stearic_Acid","Oleic_Acid","Linoleic_Acid", "Linolenic_Acid","Arachidic_Acid","Ecosenoic_Acid","OSI","Oil_content")]
+cultivar_labels <- loc$Cultivar 
+
+# Estandarizar los datos
+data_cluster_std <- scale(data_cluster)
+
+# Ajustar el algoritmo de Clustering Hierárquico
+dist_matrix <- dist(data_cluster_std)  # Calcular la matriz de distancias
+hclust_result <- hclust(dist_matrix)  # Aplicar el algoritmo de clustering jerárquico
+
+# Graficar el dendrograma resultante
+plot(hclust_result, main = "Dendrograma de Clustering Hierárquico", labels = cultivar_labels)
+```
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+# Aislamos datos
+# names(datos)
+
+loc <- datos %>% 
+  filter(Ambiente=="Loc_4") %>% 
+  group_by(Cultivar) %>%   
+  summarise(across(everything(), list(mean))) %>% 
+  ungroup() %>% 
+  rename_with(~str_remove(.x, "\\_1$"))
+  
+
+data_cluster <- loc[, c("a_Tocopherol","g_Tocopherol","d_Tocopherol","a_g_d_Tocopherol","Palmitic_Acid","Palmitoleic_Acid","Stearic_Acid","Oleic_Acid","Linoleic_Acid", "Linolenic_Acid","Arachidic_Acid","Ecosenoic_Acid","OSI","Oil_content")]
+cultivar_labels <- loc$Cultivar 
+
+# Estandarizar los datos
+data_cluster_std <- scale(data_cluster)
+
+# Ajustar el algoritmo de Clustering Hierárquico
+dist_matrix <- dist(data_cluster_std)  # Calcular la matriz de distancias
+hclust_result <- hclust(dist_matrix)  # Aplicar el algoritmo de clustering jerárquico
+
+# Graficar el dendrograma resultante
+plot(hclust_result, main = "Dendrograma de Clustering Hierárquico", labels = cultivar_labels)
+```
+
+  En power point hay algunas relaciones que puedo apreciar, pero hay que destacar que la localidad
+influencia fuertemente los resutlados del cluster. 
+
+De todas formas voy a realizar el cluster de las medias y ver que sucede independeintemente de la localidad: 
+
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+# Aislamos datos
+# names(datos)
+
+medias_cultivar <- datos %>% 
+  group_by(Cultivar) %>%   
+  summarise(across(everything(), list(mean))) %>% 
+  ungroup() %>% 
+  rename_with(~str_remove(.x, "\\_1$"))
+  
+
+data_cluster <- medias_cultivar[, c("a_Tocopherol","g_Tocopherol","d_Tocopherol","a_g_d_Tocopherol","Palmitic_Acid","Palmitoleic_Acid","Stearic_Acid","Oleic_Acid","Linoleic_Acid", "Linolenic_Acid","Arachidic_Acid","Ecosenoic_Acid","OSI","Oil_content")]
+cultivar_labels <- medias_cultivar$Cultivar 
+
+# Estandarizar los datos
+data_cluster_std <- scale(data_cluster)
+
+# Ajustar el algoritmo de Clustering Hierárquico
+dist_matrix <- dist(data_cluster_std)  # Calcular la matriz de distancias
+hclust_result <- hclust(dist_matrix)  # Aplicar el algoritmo de clustering jerárquico
+
+# Graficar el dendrograma resultante
+plot(hclust_result, main = "Dendrograma de Clustering Hierárquico", labels = cultivar_labels)
+```
+
+  No puedo ejecutar porque hay NA values: 
+  En funcion del clustering jerarquico los imputo para poder ejecutar: 
+  d_Tocopherol falta en el 4,7 y 6
+  OSI en el 13
+  oil content en el 13 y 9,8,7
+  
+  4-> 2
+  6-> 1
+  
+  7-> 9
+  9-> 7 Promedio de todos
+  
+  8-> 13,5,11,12
+  
+  13->5
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+nas<-proc_quim[!complete.cases(proc_quim), ]
+nas
+```
+  Loc_1 cv_2 1
+  Loc_2 cv_3 1
+  Loc_2 cv_3 2
+  Loc_2 cv_9 2
+  Loc_3 cv_9 2
+  Loc_3 cv_12 1
+  Loc_3 cv_12 2
+
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+medias_cultivar <- datos %>% 
+  group_by(Cultivar) %>%   
+  summarise(across(everything(), list(mean))) %>% 
+  ungroup() %>% 
+  rename_with(~str_remove(.x, "\\_1$"))
+  
+data_cluster <- medias_cultivar[, c("a_Tocopherol","g_Tocopherol","d_Tocopherol","a_g_d_Tocopherol","Palmitic_Acid","Palmitoleic_Acid","Stearic_Acid","Oleic_Acid","Linoleic_Acid", "Linolenic_Acid","Arachidic_Acid","Ecosenoic_Acid","OSI","Oil_content")]
+
+# REEMPLAZO LOS NA POR LA MEDIA DE FORMA RAPIDA PARA VER SI ESE ES EL PROBLEMA
+
+# data_cluster$d_Tocopherol[is.na(data_cluster$d_Tocopherol)] <- mean(data_cluster$d_Tocopherol, na.rm = TRUE)
+# data_cluster$OSI[is.na(data_cluster$OSI)] <- mean(data_cluster$OSI, na.rm = TRUE)
+# data_cluster$Oil_content[is.na(data_cluster$Oil_content)] <- mean(data_cluster$Oil_content, na.rm = TRUE)
+
+# # HAGO REEMPLAZO EN FUNCION DE SIMILITUD
+
+# d_Tocopherol
+# 4-> 2
+data_cluster[4,"d_Tocopherol"]<-data_cluster[2,"d_Tocopherol"]
+# 6-> 1
+data_cluster[6,"d_Tocopherol"]<-data_cluster[1,"d_Tocopherol"]
+# 7-> 9
+data_cluster[7,"d_Tocopherol"]<-data_cluster[9,"d_Tocopherol"]
+
+# OSI
+data_cluster[13,"OSI"]<-data_cluster[5,"OSI"]
+
+# oil content
+data_cluster[7,"Oil_content"]<-mean(data_cluster$Oil_content, na.rm=T)
+data_cluster[9,"Oil_content"]<-mean(data_cluster$Oil_content, na.rm=T)
+data_cluster[13,"Oil_content"]<-data_cluster[5,"Oil_content"]
+
+b<-data_cluster[c(5,11,12),"Oil_content"]
+data_cluster[8,"Oil_content"]<-mean(b$Oil_content, na.rm=T)
+
+cultivar_labels <- medias_cultivar$Cultivar 
+
+# Estandarizar los datos
+data_scaled <- scale(data_cluster)
+
+
+# n_clus= 8
+n_clus= 6
+
+# Determinar el número óptimo de clusters utilizando el criterio de silhouette y elbow
+library(cluster)
+silhouette_scores <- c()
+total_within_ss <- c()
+
+
+for (k in 1:n_clus) {
+  # Apply the K-means algorithm for different values of K
+  kmeans_result <- kmeans(data_scaled, centers = k, nstart = 10)
+  
+  # Calculate the silhouette score to evaluate the quality of the clusters
+  silhouette_scores[k] <- mean(silhouette(kmeans_result$cluster, dist(data_scaled)))
+  
+  # Calculate the total within-cluster sum of squares
+  total_within_ss[k] <- kmeans_result$tot.withinss
+}
+
+## Metodo de varianza explicada para k
+
+# Compute the within-cluster sum of squares (WCSS) for different values of k
+wcss <- vector(length = n_clus - 1)
+for (k in 2:n_clus) {
+  kmeans_result <- kmeans(data_cluster, centers = k, nstart = 10)
+  wcss[k-1] <- kmeans_result$tot.withinss
+}
+
+# Compute the variance explained for each value of k
+variance_explained <- 1 - (wcss / sum(wcss))
+
+# Plot the variance explained
+plot(2:n_clus, variance_explained, type = "b", pch = 19,
+     xlab = "Number of Clusters (k)", ylab = "Variance Explained",
+     main = "Variance Explained Analysis")
+
+# Find the optimal number of clusters based on the maximum variance explained
+optimal_k_var <- which.max(variance_explained) + 1
+cat("Optimal Number of Clusters por varianza:", optimal_k_var, "\n")
+
+# Graficar el criterio de silhouette
+plot(1:n_clus, silhouette_scores, type = "b", xlab = "Número de Clusters (K)",
+     ylab = "Puntaje de Silhouette", main = "Criterio de Silhouette")
+
+# Graficar el criterio de elbow
+plot(1:n_clus, total_within_ss, type = "b", xlab = "Número de Clusters (K)",
+     ylab = "Suma de Cuadrados Dentro de los Clusters", main = "Criterio de Elbow")
+
+# Manually determine the optimal number of clusters using the elbow point
+# total_within_ss[1]<-NA
+optimal_k_elbow <- 0
+for (k in 2:length(total_within_ss)) {
+  if (total_within_ss[k] - total_within_ss[k - 1] < 0.05 * total_within_ss[k]) {
+    optimal_k_elbow <- k - 1
+    break
+  }
+}
+
+optimal_k_silhouette <- which.max(silhouette_scores)
+
+# Aplicar el algoritmo K-means con el número óptimo de clusters
+kmeans_result <- kmeans(data_scaled, centers = optimal_k_silhouette, nstart = 10)
+
+# Obtener las etiquetas de cluster asignadas a cada cultivar
+cluster_labels <- kmeans_result$cluster
+
+# Imprimir los resultados
+cat("Número óptimo de clusters (Silhouette):", optimal_k_silhouette, "\n")
+cat("Número óptimo de clusters (Elbow):", optimal_k_elbow, "\n")
+cat("Etiquetas de cluster asignadas:", cluster_labels, "\n")
+cat("Etiquetas REALES:", cultivar_labels, "\n")
+
+resultados <- data_frame()
+
+tibble(
+  Real=cultivar_labels,
+  Cluster=cluster_labels
+) %>% 
+  arrange(desc(Cluster))
+
+```
+  En resumen los datos son todos distintos. 
+  En funcion del analisis de clustering jerarquico la mayor cantidad de clusteres que podría formar son 6. Por eso exploro los valores desde 1 a 6 clusterings,
+  Me da por el criterio de silhouette que pruebe k=6 y por el criterio de codo que pruebe 2. 
+  Si pruebo 6 obtengo resultados similares
+
+## Cuando reemplazo NA por las medias o por los valores mas similares da los mismos resultados:
+  Con K=8 determina que el numero óptimo de clusteres es de 7. Y me crea los clusteres de abajo, fuerzo a 6 a ver si obtengo los resultados que espero, que me junte 7 y 9: 
+Bien:
+* 11 y 12
+* 2, 4 y 10
+* 13 y 5
+* 1, 3 y 6
+
+Quedaron solos:
+
+* 9 
+* 8 
+* 7
+
+Diferencia principal es que no agrupo 7 y 9. 
+
+Con K=6 
+
+Bien:
+* 11 y 12
+* 2, 4 y 10  
+* 13, 5 y 8 
+* 1, 3 y 6
+
+Quedaron solos:
+
+* 9 
+* 7
+
+Quiero forzarlo con K=5 Y VER SI ME JUNTA 7 Y 9: 
+
+* Si efectivamente me los junta y son los resultados que esperaría. 
+* Asi que esta forma de unirlos no esta tan mala. 
+
+  Esta es la única diferencia por asi decir con el método de clustering jerarquico, aca estima que la similitud entre 13,5 y 8 es mayor a la que tienen 7 y 9.
+  
+  En principio creo que si deberia agruparlos y que no quede ninguno solo formaria 5 grupos, si me permite hacer que queden solos formaria 7, con los resultados que mostre arriba. 
+
+# 3) ¿El contenido de ácido linolénico se ve afectado por la temperatura durante el periodo entre el inicio de floración y la madurez fisiológica (IF-MF)?
+
+Chequear supuestos de la Reg Lin. 
+
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+
+# Load the required packages
+library(ggplot2)
+
+# Load the data (assuming the data is in a dataframe called "datos")
+# Make sure the columns "Linolenic_Acid" and "Temperature" exist
+data <- datos[, c("Linolenic_Acid", "Tmx_IF-MF","Tmed_IF-MF","T_mn_IF-MF")]
+
+cor(data)
+# La mas correlacionada linealmente es Tmx_IF-MF
+
+# Plot the scatter plot with regression line
+plot(data$`Tmx_IF-MF`, data$Linolenic_Acid, main = "Main title",
+     xlab = "X axis title", ylab = "Y axis title",
+     pch = 19, frame = FALSE)
+
+ggplot(data, aes(x = data$`Tmx_IF-MF`, y = data$Linolenic_Acid)) +
+  geom_point(size=2)+
+  geom_smooth(method = "lm", se = FALSE) +
+  xlab("Temperature") +
+  ylab("Linolenic Acid") +
+  ggtitle("Scatter Plot of Linolenic Acid vs Temperature")
+
+```
+
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+# Load the required package
+library(stats)
+
+# Perform Shapiro-Wilk test for normality
+shapiro_test <- shapiro.test(data$Linolenic_Acid)
+
+# Print the test results
+cat("Shapiro-Wilk Test for Normality\n")
+cat("Test Statistic:", shapiro_test$statistic, "\n")
+cat("p-value:", shapiro_test$p.value, "\n")
+
+```
+H0: La distribución es normal
+H1: La distribución no es normal
+
+alfa 5% conf en la hip nula > alfa, No rechazo.
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+# Fit a linear regression model
+lm_model <- lm(data$Linolenic_Acid ~ data$`Tmx_IF-MF`, data = data)
+# Print the model summary
+summary(lm_model)
+```
+  Es significativa la pendiente, bajo un modelo lineal encuentra significativa la influencia de esta variable. 
+
+De curioso me fijo las otras dos temperaturas de forma individual:
+
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+# Fit a linear regression model
+lm_model <- lm(data$Linolenic_Acid ~ data$`Tmed_IF-MF`, data = data)
+# Print the model summary
+summary(lm_model)
+```
+Tambien significativo
+
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+# Fit a linear regression model
+lm_model <- lm(data$Linolenic_Acid ~ data$`T_mn_IF-MF`, data = data)
+# Print the model summary
+summary(lm_model)
+```
+Tambien significativo
+
+## Pruebo por ML para ver cuales son las variables mas importantes:
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+# Load the required packages
+library(randomForest)
+library(caret)
+library(dplyr)
+library(lubridate)
+library(zoo)
+library(fastDummies)
+
+# Obtener las columnas numéricas
+columnas_numericas <- sapply(datos, is.numeric)
+
+# Reemplazar los valores ausentes por la media de cada columna numérica
+datos_imputados <- datos
+
+for (col in colnames(datos_imputados[columnas_numericas])) {
+  datos_imputados[, col] <- na.aggregate(datos_imputados[, col], FUN = mean)
+}
+
+# Set the seed for reproducibility
+set.seed(123)
+
+# Encoding de variables Ambiente y Cultivar (One-Hot Encoding)
+encoded_data <- datos_imputados %>%
+  mutate(Ambiente = as.factor(Ambiente),
+         Cultivar = as.factor(Cultivar)) %>%
+  dummy_cols(remove_selected_columns = TRUE)
+
+# Generación de variables a partir de fechas
+encoded_data$Dur_S_IF <- as.numeric(difftime(datos_imputados$inicio_de_floración_IF, datos_imputados$Fecha_de_siembra_S, units = "days"))
+encoded_data$Dur_MF_IF <- as.numeric(difftime(datos_imputados$Madurez_fisiologica_MF, datos_imputados$inicio_de_floración_IF, units = "days"))
+encoded_data$Dur_MF_S <- as.numeric(difftime(datos_imputados$Madurez_fisiologica_MF, datos_imputados$Fecha_de_siembra_S, units = "days"))
+
+# Select the predictor variables (excluding date-related variables)
+predictors <- encoded_data[,!(colnames(encoded_data) %in% c("Codigo","Repetición","Ambiente","Cultivar","inicio_de_floración_IF", "Madurez_fisiologica_MF", "Fecha_de_siembra_S","Linolenic_Acid"))]
+
+colSums(is.na(predictors))
+
+# Select the response variable (Linolenic_Acid)
+response <- datos_imputados$Linolenic_Acid
+
+# Split the data into training and testing sets
+train_indices <- createDataPartition(response, p = 0.9, list = FALSE)
+train_data <- predictors[train_indices, ]
+train_response <- response[train_indices]
+test_data <- predictors[-train_indices, ]
+test_response <- response[-train_indices]
+
+colSums(is.na(train_data))
+
+# Define the training control with 10-fold cross-validation
+cv <- trainControl(method = "cv", number = 10)
+
+# Entrenar el modelo Random Forest
+rf_model <- train(x = train_data, y = train_response, method = "rf", trControl = cv)
+
+# Print the cross-validated metrics
+print(rf_model$results)
+
+# Perform random search for hyperparameters
+
+# ## ACA ERRRRRRRROR
+# # Error: The tuning parameter grid should have columns mtry
+# 
+# rf_grid <- expand.grid(mtry = c(2, 4, 6))
+# rf_search <- train(x = train_data, y = train_response, method = "rf", trControl = cv, tuneGrid = rf_grid)
+# 
+# # Print the best hyperparameters
+# print(rf_search$bestTune)
+# 
+# # Fit the final model with the optimal hyperparameters
+# final_rf_model <- randomForest(train_response ~ ., data = train_data, mtry = rf_search$bestTune[["mtry"]],
+#                                ntree = rf_search$bestTune[["ntree"]])
+
+# Predict on the test data using the final model
+predictions <- predict(rf_model, newdata = test_data)
+
+# Calculate metrics for the final model
+rmse <- sqrt(mean((predictions - test_response)^2))
+
+# Print the metrics
+cat("RMSE:", rmse, "\n")
+
+# Calculate variable importance by permutation
+importance <- varImp(rf_model, scale = FALSE)
+print(importance)
+```
+
+# 4) Para cada uno de los componentes del grano medido, ¿cuál de los factores (cultivar o ambiente) aporta mayor variación? ¿Existe interacción genotipo-ambiente? ¿Qué cultivar/es recomendaría en sentido amplio o sitio específico?
+
+  Chequear supuesto y hacer analisis a posteriori infostat. 
+  
+  ¿cuál de los factores (cultivar o ambiente) aporta mayor variación?
+  
+  Incluir ambos como efectos aleatorios y ver cual es el que mayor porcentaje de variabilidad reune. 
+  
+  ¿Existe interacción genotipo-ambiente? 
+  
+  Me da no significativa. Entonces procedo a inferir sobre los efectos principales.
+  
+  ¿Qué cultivar/es recomendaría en sentido amplio o sitio específico?
+  
+  Incluiria ambiente como aleatorio y veo que cultivar recomendaria de entre todos ellos
+  
+  Inluiria cultivar como aleatorio y veria que ambiente recomendaria.
+  
+  Dentro de cada ambiente por separado ver que cultivar recomiendo. 
+
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+# Cargar paquetes necesarios
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+library(car)
+
+# Convertir las variables Ambiente y Cultivar en factores
+datos$Ambiente <- as.factor(datos$Ambiente)
+datos$Cultivar <- as.factor(datos$Cultivar)
+
+# Realizar el ANOVA factorial con interacción
+modelo_anova <- aov(Linolenic_Acid ~ Ambiente + Cultivar +  Ambiente * Cultivar, data = datos)
+
+# Obtener los resultados del ANOVA
+resultados_anova <- summary(modelo_anova)
+
+# Mostrar tabla de análisis de varianza
+print(resultados_anova)
+
+# # Realizar análisis a posteriori para comparar los efectos principales
+# posthoc <- TukeyHSD(modelo_anova, "Ambiente")
+# print(posthoc)
+# 
+# posthoc <- TukeyHSD(modelo_anova, "Cultivar")
+# print(posthoc)
+
+# Verificar los supuestos del modelo
+plot(modelo_anova)
+
+# Realizar gráficos para visualizar los efectos
+ggplot(datos, aes(x = Ambiente, y = Linolenic_Acid, fill = Cultivar)) +
+  geom_boxplot() +
+  labs(title = "Efecto de Ambiente y Cultivar sobre el contenido de ácido linolénico")
+
+# Realizar recomendaciones en función de los resultados obtenidos
+# Interpretar los efectos principales y la interacción para determinar qué factores tienen un mayor impacto en el contenido de ácido linolénico y qué cultivares son más recomendables en cada ambiente.
+
+```
+
+  La interacción es no significativa. El efecto del cultivar no depende del ambiente.
+  El cambio de ambiente tiene el mismo efecto en el cultivar. Entonces no hay efecto de interaccion, los resultados son constantes en los distintos cultivares y ambientes. 
+  
+  Si la interacción entre el cultivar y el ambiente no es significativa, indica que el efecto del cultivar no depende del ambiente y viceversa. En este caso, se podría inferir que el efecto del ambiente es consistente para todos los cultivares, lo que sugiere que el cambio de ambiente tiene un efecto similar en todos los cultivares.
+  
+  Ambiente si.
+  
+  Cultivar ahi nomas, rozando. Mejor que si asi puedo descubrir cual es mejor. 
+  
+  
+ * Podria hacer un anova en cada ambiente por separado y recomendar de forma individual para cada uno de ellos. 
+ 
+  En este escenario, es apropiado realizar un análisis de ANOVA por separado para cada ambiente, evaluando el efecto del cultivar dentro de cada ambiente individualmente. Esto permitirá examinar si hay diferencias significativas entre los cultivares dentro de cada ambiente en particular. Al realizar análisis separados para cada ambiente, podrás obtener una visión más detallada de cómo se comportan los cultivares en diferentes condiciones ambientales.
+ 
+ * ¿Cúal ambiente es el que permite obtener mejores resultados?
+ 
+ * ¿Cúal cultivar es el que me permite obtener mejores resultados?
+
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+loc <- datos %>% 
+  filter(Ambiente=="Loc_1")
+
+modelo_anova <- aov(Linolenic_Acid ~ Cultivar, data = loc)
+
+# Obtener los resultados del ANOVA
+resultados_anova <- summary(modelo_anova)
+
+# Mostrar tabla de análisis de varianza
+print(resultados_anova)
+
+loc %>% 
+  group_by(Cultivar) %>%   
+  summarise(Linolenic_Acid=mean(Linolenic_Acid,na.rm=T)) %>% 
+  arrange(desc(Linolenic_Acid))
+```
+  No hay diferencias significativas.
+  Es mucho la diferencia entre minimo y maximo?. Si no es tanta es lo mismo usar el cultivar de menor precio. 
+
+
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+loc <- datos %>% 
+  filter(Ambiente=="Loc_2")
+
+modelo_anova <- aov(Linolenic_Acid ~ Cultivar, data = loc)
+
+# Obtener los resultados del ANOVA
+resultados_anova <- summary(modelo_anova)
+
+# Mostrar tabla de análisis de varianza
+print(resultados_anova)
+
+loc %>% 
+  group_by(Cultivar) %>%   
+  summarise(Linolenic_Acid=mean(Linolenic_Acid,na.rm=T)) %>% 
+  arrange(desc(Linolenic_Acid))
+```
+  Hay diferencias significativas. 
+
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+loc <- datos %>% 
+  filter(Ambiente=="Loc_3")
+
+modelo_anova <- aov(Linolenic_Acid ~ Cultivar, data = loc)
+
+# Obtener los resultados del ANOVA
+resultados_anova <- summary(modelo_anova)
+
+# Mostrar tabla de análisis de varianza
+print(resultados_anova)
+
+loc %>% 
+  group_by(Cultivar) %>%   
+  summarise(Linolenic_Acid=mean(Linolenic_Acid,na.rm=T)) %>% 
+  arrange(desc(Linolenic_Acid))
+```
+  Hay diferencias significativas.
+
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+loc <- datos %>% 
+  filter(Ambiente=="Loc_4")
+
+modelo_anova <- aov(Linolenic_Acid ~ Cultivar, data = loc)
+
+# Obtener los resultados del ANOVA
+resultados_anova <- summary(modelo_anova)
+
+# Mostrar tabla de análisis de varianza
+print(resultados_anova)
+
+loc %>% 
+  group_by(Cultivar) %>%   
+  summarise(Linolenic_Acid=mean(Linolenic_Acid,na.rm=T)) %>% 
+  arrange(desc(Linolenic_Acid))
+```
+  No hay diferencias singnificativas y p valor mas alto. 
+
+# 5) ¿Qué factores del clima explican la interacción cultivar-ambiente para el contenido de ácido linolénico?
+
+  Primero que nada no entiendo bien que seria explicar la interacción.
+  A mi me da que no hay interacción. 
+  
+   
+  Por lo pronto lo que haría seria un MLGM: 
+  Ac.Linolenico como respuesta. 
+  Efecto aleatorio tanto cultivar como ambiente. 
+  Co variable todo lo del clima. Me permite obtener la variabilidad explicada por cada uno?. 
+
+  Desde el lado del ML: 
+  Modelo para ac linolenico para cada ambiente por separado. 
+  Incluyendo cultivar como dummy pero no darle bollilla. 
+  
+  y todas las covariables climaticas e interpretar importancia sin darle bolilla a la dummy. 
+
+  Es con un PLS pagina 203 del manual de infostat. 
+  
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+
+
+```
+
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+
+
+```
+
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+
+
+```
+
+
+
+
+
+

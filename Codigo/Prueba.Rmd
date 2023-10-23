@@ -1,0 +1,148 @@
+---
+title: "Untitled"
+author: "Rodriguez Nuñez Martin"
+date: "2023-07-31"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r ac_lin, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16, fig.cap="\\label{fig:ac_lin} Figura 1: contenido de ácido graso linolénico en los distintos cultivares de colza evaluados en el estudio y resultados de la prueba a posteriori."}
+library(tidyverse)
+
+datos<-tibble(
+  "Cultivar"=c("2","5","4","9","13","8","12","6","11","10","7","3","1"),
+  "Media"=c(8.86,8.64,8.52,8.49,8.47,8.46,8.45,8.44,8.41,8.40,8.29,8.14,8.06),
+  "E.E."=c(0.43,0.42,0.56,0.44,0.43,0.44,0.45,0.44,0.44,0.43,0.45,0.43,0.44),
+  "DGC"= c("A","B","B","B","B","B","B","B","B","B","B","C","C")
+  )
+
+# colored barplot according Tukey's test results
+ggplot(datos, aes(reorder(factor(Cultivar),-Media), Media, fill = DGC)) + 
+  geom_bar(stat = "identity", width=0.8, alpha=1, show.legend = FALSE) +
+  scale_fill_brewer(palette = "Spectral") +
+  geom_errorbar(aes(ymin=datos$Media-datos$E.E., ymax=datos$Media+datos$E.E.), width = 0.3) + 
+  labs(x="Cultivar", y="Ácido graso linolénico [%]") +
+  theme_bw() + 
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        text = element_text(size=30),
+          legend.position="bottom",
+          axis.text.x=element_text(angle=0, hjust=1)) +
+  geom_text(aes(label=DGC), nudge_x = 0, nudge_y = 0.6, size = 8)+ 
+  coord_cartesian(ylim=c(7.5,9.5))+
+  geom_text(aes(label = format(Media, digits = 3), y = 7.5), size=10)
+```
+
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+datos<-tibble(
+  "Cultivar"=c("9","7","1","4","5","6","3","11","2","10","13","12","8"),
+  "Media"=c(7.18,6.93,6.77,6.63,6.57,6.56,6.47,6.47,6.47,6.46,6.43,6.26,5.99),
+  "E.E."=c(0.18,0.18,0.18,0.18,0.18,0.18,0.18,0.18,0.18,0.18,0.18,0.18,0.18),
+  "DGC"= c("A","A","A","B","B","B","B","B","B","B","B","B","C")
+  )
+
+# colored barplot according Tukey's test results
+ggplot(datos, aes(reorder(factor(Cultivar),-Media), Media, fill = DGC)) + 
+  geom_bar(stat = "identity", width=0.8, alpha=1, show.legend = FALSE) +
+  scale_fill_brewer(palette = "Spectral") +
+  geom_errorbar(aes(ymin=datos$Media-datos$E.E., ymax=datos$Media+datos$E.E.), width = 0.3) + 
+  labs(x="Cultivar", y="Ácidos grasos saturados [%]") +
+  theme_bw() + 
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        text = element_text(size=30),
+          legend.position="bottom",
+          axis.text.x=element_text(angle=0, hjust=1)) +
+  geom_text(aes(label=DGC), nudge_x = 0, nudge_y = 0.4, size = 8)+ 
+  coord_cartesian(ylim=c(5.5,7.7))+
+  geom_text(aes(label = format(Media, digits = 3), y = 5.5), size=10)
+```
+
+```{r ac_sat, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16, fig.cap="\\label{fig:ac_sat} Figura 2: Contenido de ácidos grasos saturados en los distintos cultivares de colza evaluados en el estudio y resultados de la prueba a posteriori"}
+datos<-tibble(
+  "Cultivar"=c("9","7","1","4","5","6","3","11","2","10","13","12","8"),
+  "Media"=c(7.18,6.93,6.77,6.63,6.57,6.56,6.47,6.47,6.47,6.46,6.43,6.26,5.99),
+  "E.E."=c(0.18,0.18,0.18,0.18,0.18,0.18,0.18,0.18,0.18,0.18,0.18,0.18,0.18),
+  "DGC"= c("A","A","A","B","B","B","B","B","B","B","B","B","C")
+  )
+
+# colored barplot according Tukey's test results
+ggplot(datos, aes(reorder(factor(Cultivar),-Media), Media, fill = DGC)) + 
+  geom_bar(stat = "identity", width=0.8, alpha=1, show.legend = FALSE) +
+  scale_fill_brewer(palette = "Spectral") +
+  geom_errorbar(aes(ymin=datos$Media-datos$E.E., ymax=datos$Media+datos$E.E.), width = 0.3) + 
+  labs(x="Cultivar", y="Ácidos grasos saturados [%]") +
+  theme_bw() + 
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        text = element_text(size=30),
+          legend.position="bottom",
+          axis.text.x=element_text(angle=0, hjust=1)) +
+  geom_text(aes(label=DGC), nudge_x = 0, nudge_y = 0.4, size = 8)+ 
+  coord_cartesian(ylim=c(5.5,7.7))+
+  geom_text(aes(label = format(Media, digits = 3), y = 5.5), size=10)
+```
+
+```{r conj, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16, fig.cap="\\label{fig:conj} Figura 3: Análisis conjunto de las componentes de contenido de ácido graso linolénico y ácidos grasos saturados mediante un diagrama de dispersión. El área de resultados óptima se encuentra coloreada, además de los cultivares que exhibieron diferencias significativas en la prueba a posteriori que lo distingue como el óptimo."}
+library(tidyverse)
+library(ggrepel)
+
+datos<-tibble(
+  "Cultivar"=c("cv_2","cv_5","cv_4","cv_9","cv_13","cv_8","cv_12","cv_6","cv_11","cv_10","cv_7","cv_3","cv_1"),
+  "ac_lin"=c(8.86,8.64,8.52,8.49,8.47,8.46,8.45,8.44,8.41,8.40,8.29,8.14,8.06),
+  "ac_lin_ee"=c(0.43,0.42,0.56,0.44,0.43,0.44,0.45,0.44,0.44,0.43,0.45,0.43,0.44),
+  "ac_lin_DGC"= c("A","B","B","B","B","B","B","B","B","B","B","C","C"),
+  "ac_sat"=c(6.47,6.57,6.63,7.18,6.43,5.99,6.26,6.56,6.47,6.46,6.93,6.47,6.77),
+  "ac_sat_DGC"=c("B","B","B","A","B","C","B","B","B","B","A","B","A"),
+  "dgc_comb" = c("A","B","B","B","B","C","B","B","B","B","B","B","B"),
+  "ac_sat_ee"=c(0.18,0.18,0.18,0.18,0.18,0.18,0.18,0.18,0.18,0.18,0.18,0.18,0.18)
+  )
+
+# mean(datos$ac_lin) #8.433077
+# mean(datos$ac_sat) #6.553077
+
+# colored barplot according Tukey's test results
+ggplot(datos, aes(ac_sat,ac_lin, color = dgc_comb)) + #, color = ac_lin_DGC, shape = ac_sat_DGC
+  geom_point(size=5) +
+  geom_text_repel(aes(label = Cultivar), size = 10)+
+  theme_bw() + 
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        text = element_text(size=30),
+          legend.position="none",
+          axis.text.x=element_text(angle=0, hjust=1))+
+  geom_hline(yintercept=8.433077, linetype="dashed", 
+                color = "red", size=2)+
+  geom_vline(xintercept=6.553077, linetype="dashed", 
+                color = "red", size=2)+
+  geom_rect(aes(xmin = -Inf, xmax = 6.553077, ymin = 8.433077, ymax = Inf),
+                   fill = "yellow", alpha = 0.01)+
+    labs(x="Ácidos grasos saturados [%]", y="Ácido graso linolénico [%]")
+```
+
+```{r calh, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16, fig.cap="\\label{fig:calh} Figura 4: Variación del índice de Calinski Harabasz con el número de clusteres."}
+k<-read_csv("datos/k_optimo.csv")
+
+ggplot(k, aes(k$...1,k$`Calinski Harabasz Score`)) + #, color = ac_lin_DGC, shape = ac_sat_DGC
+  geom_point(size=5) +
+  geom_line()+
+  theme_bw() + 
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        text = element_text(size=30),
+          legend.position="none",
+          axis.text.x=element_text(angle=0, hjust=1))+
+    labs(x="Número de clusteres", y="Calinski Harabasz Score")+
+  scale_x_continuous(n.breaks=12)
+```
+
+```{r sil, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16, fig.cap="\\label{fig:sil} Figura 5: Variación del índice de Silhouette con el número de clusteres."}
+ggplot(k, aes(k$...1,k$`Silhouette Score`)) + #, color = ac_lin_DGC, shape = ac_sat_DGC
+  geom_point(size=5) +
+  geom_line()+
+  theme_bw() + 
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        text = element_text(size=30),
+          legend.position="none",
+          axis.text.x=element_text(angle=0, hjust=1))+
+    labs(x="Número de clusteres", y="Silhouette Score")+
+  scale_x_continuous(n.breaks=12)
+```

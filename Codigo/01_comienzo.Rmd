@@ -1,0 +1,1079 @@
+---
+title: "01_Comienzo"
+author: "Rodriguez Nuñez Martin"
+date: "2023-07-18"
+output: html_document
+---
+
+```{r, echo=F,message=F,warning=F}
+library(tidyverse)
+library(lubridate)
+library(readxl)
+library(reshape2)
+
+# Importo base de datos:
+datos<- read.csv("datos/datos_Martin_original.csv")
+```
+
+# 1) ¿Cuáles cultivares de colza presentan mayor contenido de ácido linolénico y menor contenido de ácidos grasos saturados? 
+
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+print("Acido linolenico ordenado por media")
+DT::datatable(
+datos %>% 
+  group_by(Cultivar) %>% 
+  summarise(Media=mean(Linolenic_Acid_r),
+            sd=sd(Linolenic_Acid_r)) %>% 
+  arrange(desc(Media))
+)
+
+print("Acidos grasos saturados ordenado por media")
+DT::datatable(
+  datos %>% 
+  group_by(Cultivar) %>% 
+  summarise(Media=mean(tot_acsat_r),
+            sd=sd(tot_acsat_r)) %>% 
+  arrange(Media)
+  )
+
+print("Acido linolenico ordenado por desvio")
+DT::datatable(
+datos %>% 
+  group_by(Cultivar) %>% 
+  summarise(Media=mean(Linolenic_Acid_r),
+            sd=sd(Linolenic_Acid_r)) %>% 
+  arrange(sd)
+)
+
+print("Acidos grasos saturados ordenado por desvio")
+DT::datatable(
+  datos %>% 
+  group_by(Cultivar) %>% 
+  summarise(Media=mean(tot_acsat_r),
+            sd=sd(tot_acsat_r)) %>% 
+  arrange(sd)
+  )
+```
+
+  Anavas en funcion de rendimiento. 
+  
+  Mayor a menor contenido de ácido linolenico: 
+  * cv_2, cv_5, cv_12, cv_4. 
+  * cv_13, cv_11, cv_8, cv_9, cv_10
+  * cv_6, cv_1,cv_7,cv_3  
+  
+  Desvió de menor a mayor: cv_7,cv_10,cv_5,cv_9,cv_4,cv_2,cv_3,cv_13,cv_6,cv_12,cv_8,cv_1,cv_11.
+  
+  Menor a mayor contenido de ácidos grasos saturados: 
+  * cv_8, cv_3, cv_12, cv_10.
+  * cv_6, cv_2, cv_13, cv_11, cv_5.
+  * Mayor: cv_7, cv_4, cv_1, cv_9.  
+  
+  Desvió de menor a mayor: cv_3,cv_9,cv_13,cv_7,cv_6,cv_5,cv_12,cv_2,cv_8,cv_11,cv_10,cv_4,cv_1.
+  
+  Conclusiones:
+  - cv_2 mayor contenido de ac linolenico e intermedio de saturados. Desvio intermedio en los dos. 
+  - cv_8 menor saturados e intermedio de linolenico. 
+  - cv_5 segundo mayor ac linolenico e intermedio en saturados y desvios intemedios. 
+  - cv_3 pesimo en ac linoleico, 2 do menor en saturados. 
+  
+  - Mayor estabilidad ac linol cv_7 bajo contenido ac linol y saturados intermedio. 
+  - Mayor estabilidad saturados cv_3, intermedio y saturados segundo mas bajo. 
+
+### Procedimiento 1:
+Para describir esto añadir análisis gráfico y exploratorio con las tablas.
+Luego añado resultados del ANAVA y concluyo cuales recomendaríamos. A medida que desarrollo el ANAVA incluir resultados parciales de como fuimos mejorando los resultados a partir del análisis de los supuestos, principalmente el de homogeneidad de varianzas al incluir la funcion p ident var. 
+  
+## Resultados del ANAVA. 
+
+### Acido linolenico
+
+  MLMM incluyendo localidad como efecto aleatorio. Hay diferencias significativas el 2 es el único que es distinto del resto. 
+  
+  * Chequeo supuestos: 
+  El dato numero 7 loc_1, cv_4. 
+  Y el 80 loc_4, cv_1.
+  
+  Una vez los borre y otra no. 
+  
+  Ya encontramos diferencias significativas, entonces no continuamos corrigiendo supuestos. 
+  
+  Incluyendo una función de varianza cv_2 y cv_5, se diferencian del resto. A.
+  
+  Los demás al medio como B. 
+  
+  Y finalmente como C, los de menores son: cv_1, cv_7 y cv_3
+
+### Acidos saturados
+
+  Chequeo supuestos, dato 79 residuo muy grande. loc_3, cv_13.
+  
+  El unico que se diferencia del resto con anava pvar ident es el 9 que es el que mas tiene, los demas todos poseen contenido equivalente de acidos grasos saturados. 
+  
+#### Conclusion
+
+  Al no encontrar diferencias significativas en el contenido de acidos grasos saturados y si en funcion del linolenico, recomendamos los que mayor acido linolenico tienen cv_2 y cv_5.
+
+
+# 2) ¿Cómo agruparía los cultivares con base en la similitud del perfil de ácidos grasos, tocoferoles e índice de estabilidad? 
+
+### Clustering jerarquico
+
+#### Distancia euclideana
+
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+# Aislamos datos
+
+data_cluster <- datos[, c("a_Tocopherol","g_Tocopherol","d_Tocopherol","a_g_d_Tocopherol","Palmitic_Acid","Palmitoleic_Acid","Stearic_Acid","Oleic_Acid","Linoleic_Acid", "Linolenic_Acid","Arachidic_Acid","Ecosenoic_Acid","OSI")]
+cultivar_labels <- datos$Cultivar 
+
+# Estandarizar los datos
+data_cluster_std <- scale(data_cluster)
+
+# Ajustar el algoritmo de Clustering Hierárquico
+dist_matrix <- dist(data_cluster_std)  # Calcular la matriz de distancias
+hclust_result <- hclust(dist_matrix)  # Aplicar el algoritmo de clustering jerárquico
+
+# Graficar el dendrograma resultante
+plot(hclust_result, main = "Dendrograma de Clustering Jerárquico", labels = cultivar_labels)
+```
+
+* Localidad es importante. 
+
+  Vemos que tener en cuenta la localidad a la hora de agrupar en funcion del criterio planteado es importante, ya que los resultados de similitud varian en funcion de la misma. 
+
+
+### Analizo por localidad pero sin calcular la media de los perfiles
+
+##### Localidad 1
+
+  En primera instancia no calculare los promedios entre ambas repeticiones y me fijare si las agrupa relativamente juntas a todas ellas. 
+
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+loc <- datos %>% 
+  filter(Ambiente=="Loc_1")
+
+data_cluster <- loc[, c("a_Tocopherol","g_Tocopherol","d_Tocopherol","a_g_d_Tocopherol","Palmitic_Acid","Palmitoleic_Acid","Stearic_Acid","Oleic_Acid","Linoleic_Acid", "Linolenic_Acid","Arachidic_Acid","Ecosenoic_Acid","OSI")]
+cultivar_labels <- loc$Cultivar 
+
+# Estandarizar los datos
+data_cluster_std <- scale(data_cluster)
+
+# Ajustar el algoritmo de Clustering Hierárquico
+dist_matrix <- dist(data_cluster_std)  # Calcular la matriz de distancias
+hclust_result <- hclust(dist_matrix)  # Aplicar el algoritmo de clustering jerárquico
+
+# Graficar el dendrograma resultante
+plot(hclust_result, main = "Dendrograma de Clustering Jerárquico", labels = cultivar_labels)
+```
+  
+  Hay mucha variabilidad en las repeticiones, ni si quiera se unen entre ellas, es decir que las repeticiones difieren notablemente entre ellas. 
+  
+  **No solo el valor de los componentes del ácido dependen de la localidad, si no que también de la repetición que se haya realizado.**
+
+  Para la localidad 1, los cultivares que muestran resultados similares entre sus repeticiones son cv_1, cv_7, cv_9, cv_13, cv_8. 
+  Esperaria que me agrupe 8 y 12, 13 y 11, 7 y 9. 
+  
+##### Localidad 2
+
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+loc <- datos %>% 
+  filter(Ambiente=="Loc_2")
+
+data_cluster <- loc[, c("a_Tocopherol","g_Tocopherol","d_Tocopherol","a_g_d_Tocopherol","Palmitic_Acid","Palmitoleic_Acid","Stearic_Acid","Oleic_Acid","Linoleic_Acid", "Linolenic_Acid","Arachidic_Acid","Ecosenoic_Acid","OSI")]
+cultivar_labels <- loc$Cultivar 
+
+# Estandarizar los datos
+data_cluster_std <- scale(data_cluster)
+
+# Ajustar el algoritmo de Clustering Hierárquico
+dist_matrix <- dist(data_cluster_std)  # Calcular la matriz de distancias
+hclust_result <- hclust(dist_matrix)  # Aplicar el algoritmo de clustering jerárquico
+
+# Graficar el dendrograma resultante
+plot(hclust_result, main = "Dendrograma de Clustering Jerárquico", labels = cultivar_labels)
+```
+
+  En este cultivar hay mas estabilidad entre las repeticiones, para el 11, 7, 9, 13, 5. 
+
+  Esperaría que me agrupe: 7 y 9. 
+  
+##### Localidad 3
+
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+loc <- datos %>% 
+  filter(Ambiente=="Loc_3")
+
+data_cluster <- loc[, c("a_Tocopherol","g_Tocopherol","d_Tocopherol","a_g_d_Tocopherol","Palmitic_Acid","Palmitoleic_Acid","Stearic_Acid","Oleic_Acid","Linoleic_Acid", "Linolenic_Acid","Arachidic_Acid","Ecosenoic_Acid","OSI")]
+cultivar_labels <- loc$Cultivar 
+
+# Estandarizar los datos
+data_cluster_std <- scale(data_cluster)
+
+# Ajustar el algoritmo de Clustering Hierárquico
+dist_matrix <- dist(data_cluster_std)  # Calcular la matriz de distancias
+hclust_result <- hclust(dist_matrix)  # Aplicar el algoritmo de clustering jerárquico
+
+# Graficar el dendrograma resultante
+plot(hclust_result, main = "Dendrograma de Clustering Jerárquico", labels = cultivar_labels)
+```
+  Detecto solo estabilidad en el cultivar: 9, 5, 10.
+  
+  Esperaria agrupar: 9 y 7, 5 y 6 puede ser. 
+
+##### Localidad 4
+
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+loc <- datos %>% 
+  filter(Ambiente=="Loc_4")
+
+data_cluster <- loc[, c("a_Tocopherol","g_Tocopherol","d_Tocopherol","a_g_d_Tocopherol","Palmitic_Acid","Palmitoleic_Acid","Stearic_Acid","Oleic_Acid","Linoleic_Acid", "Linolenic_Acid","Arachidic_Acid","Ecosenoic_Acid","OSI")]
+cultivar_labels <- loc$Cultivar 
+
+# Estandarizar los datos
+data_cluster_std <- scale(data_cluster)
+
+# Ajustar el algoritmo de Clustering Hierárquico
+dist_matrix <- dist(data_cluster_std)  # Calcular la matriz de distancias
+hclust_result <- hclust(dist_matrix)  # Aplicar el algoritmo de clustering jerárquico
+
+# Graficar el dendrograma resultante
+plot(hclust_result, main = "Dendrograma de Clustering Jerárquico", labels = cultivar_labels)
+```
+
+  Solo estabilidad entre repeticiones en el: 6, 8, 3. 
+  
+  Esperaría agrupar.
+  
+  En resumen es difícil establecer quienes agruparía por localidad si no tengo en cuenta la media de las repeticiones, de todas formas hay que tener en cuenta que tenemos pocos datos por cultivar por localidad (solo 2) y que hay gran variabilidad en ellos.
+
+## Hago análisis por la media: 
+
+  Calculo la media y vuelvo a clusterizar para analizar:
+
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+loc <- datos %>% 
+  filter(Ambiente=="Loc_1") %>% 
+  group_by(Cultivar) %>%   
+  summarise(across(everything(), list(mean))) %>% 
+  ungroup() %>% 
+  rename_with(~str_remove(.x, "\\_1$"))
+  
+
+data_cluster <- loc[, c("a_Tocopherol","g_Tocopherol","d_Tocopherol","a_g_d_Tocopherol","Palmitic_Acid","Palmitoleic_Acid","Stearic_Acid","Oleic_Acid","Linoleic_Acid", "Linolenic_Acid","Arachidic_Acid","Ecosenoic_Acid","OSI")]
+cultivar_labels <- loc$Cultivar 
+
+# Estandarizar los datos
+data_cluster_std <- scale(data_cluster)
+
+# Ajustar el algoritmo de Clustering Hierárquico
+dist_matrix <- dist(data_cluster_std)  # Calcular la matriz de distancias
+hclust_result <- hclust(dist_matrix)  # Aplicar el algoritmo de clustering jerárquico
+
+# Graficar el dendrograma resultante
+plot(hclust_result, main = "Dendrograma de Clustering Jerárquico", labels = cultivar_labels)
+```
+
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+loc <- datos %>% 
+  filter(Ambiente=="Loc_2") %>% 
+  group_by(Cultivar) %>%   
+  summarise(across(everything(), list(mean))) %>% 
+  ungroup() %>% 
+  rename_with(~str_remove(.x, "\\_1$"))
+  
+
+data_cluster <- loc[, c("a_Tocopherol","g_Tocopherol","d_Tocopherol","a_g_d_Tocopherol","Palmitic_Acid","Palmitoleic_Acid","Stearic_Acid","Oleic_Acid","Linoleic_Acid", "Linolenic_Acid","Arachidic_Acid","Ecosenoic_Acid","OSI")]
+cultivar_labels <- loc$Cultivar 
+
+# Estandarizar los datos
+data_cluster_std <- scale(data_cluster)
+
+# Ajustar el algoritmo de Clustering Hierárquico
+dist_matrix <- dist(data_cluster_std)  # Calcular la matriz de distancias
+hclust_result <- hclust(dist_matrix)  # Aplicar el algoritmo de clustering jerárquico
+
+# Graficar el dendrograma resultante
+plot(hclust_result, main = "Dendrograma de Clustering Jerárquico", labels = cultivar_labels)
+```
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+# Aislamos datos
+# names(datos)
+
+loc <- datos %>% 
+  filter(Ambiente=="Loc_3") %>% 
+  group_by(Cultivar) %>%   
+  summarise(across(everything(), list(mean))) %>% 
+  ungroup() %>% 
+  rename_with(~str_remove(.x, "\\_1$"))
+  
+
+data_cluster <- loc[, c("a_Tocopherol","g_Tocopherol","d_Tocopherol","a_g_d_Tocopherol","Palmitic_Acid","Palmitoleic_Acid","Stearic_Acid","Oleic_Acid","Linoleic_Acid", "Linolenic_Acid","Arachidic_Acid","Ecosenoic_Acid","OSI")]
+cultivar_labels <- loc$Cultivar 
+
+# Estandarizar los datos
+data_cluster_std <- scale(data_cluster)
+
+# Ajustar el algoritmo de Clustering Hierárquico
+dist_matrix <- dist(data_cluster_std)  # Calcular la matriz de distancias
+hclust_result <- hclust(dist_matrix)  # Aplicar el algoritmo de clustering jerárquico
+
+# Graficar el dendrograma resultante
+plot(hclust_result, main = "Dendrograma de Clustering Jerárquico", labels = cultivar_labels)
+```
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+loc <- datos %>% 
+  filter(Ambiente=="Loc_4") %>% 
+  group_by(Cultivar) %>%   
+  summarise(across(everything(), list(mean))) %>% 
+  ungroup() %>% 
+  rename_with(~str_remove(.x, "\\_1$"))
+  
+
+data_cluster <- loc[, c("a_Tocopherol","g_Tocopherol","d_Tocopherol","a_g_d_Tocopherol","Palmitic_Acid","Palmitoleic_Acid","Stearic_Acid","Oleic_Acid","Linoleic_Acid", "Linolenic_Acid","Arachidic_Acid","Ecosenoic_Acid","OSI")]
+cultivar_labels <- loc$Cultivar 
+
+# Estandarizar los datos
+data_cluster_std <- scale(data_cluster)
+
+# Ajustar el algoritmo de Clustering Hierárquico
+dist_matrix <- dist(data_cluster_std)  # Calcular la matriz de distancias
+hclust_result <- hclust(dist_matrix)  # Aplicar el algoritmo de clustering jerárquico
+
+# Graficar el dendrograma resultante
+plot(hclust_result, main = "Dendrograma de Clustering Jerárquico", labels = cultivar_labels)
+```
+
+  En power point hay algunas relaciones que puedo apreciar, pero hay que destacar que la localidad influencia fuertemente los resutlados del cluster. 
+
+  De todas formas voy a realizar el cluster de las medias y ver que sucede independeintemente de la localidad: 
+
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+medias_cultivar <- datos %>% 
+  group_by(Cultivar) %>%   
+  summarise(across(everything(), list(mean))) %>% 
+  ungroup() %>% 
+  rename_with(~str_remove(.x, "\\_1$"))
+  
+
+data_cluster <- medias_cultivar[, c("a_Tocopherol","g_Tocopherol","d_Tocopherol","a_g_d_Tocopherol","Palmitic_Acid","Palmitoleic_Acid","Stearic_Acid","Oleic_Acid","Linoleic_Acid", "Linolenic_Acid","Arachidic_Acid","Ecosenoic_Acid","OSI")]
+
+cultivar_labels <- medias_cultivar$Cultivar 
+
+# Estandarizar los datos
+data_cluster_std <- scale(data_cluster)
+
+# Ajustar el algoritmo de Clustering Hierárquico
+dist_matrix <- dist(data_cluster_std)  # Calcular la matriz de distancias
+hclust_result <- hclust(dist_matrix)  # Aplicar el algoritmo de clustering jerárquico
+
+# Graficar el dendrograma resultante
+plot(hclust_result, main = "Dendrograma de Clustering Jerárquico", labels = cultivar_labels)
+```
+  
+
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+medias_cultivar <- datos %>% 
+  group_by(Cultivar) %>%   
+  summarise(across(everything(), list(mean))) %>% 
+  ungroup() %>% 
+  rename_with(~str_remove(.x, "\\_1$"))
+  
+data_cluster <- medias_cultivar[, c("a_Tocopherol","g_Tocopherol","d_Tocopherol","a_g_d_Tocopherol","Palmitic_Acid","Palmitoleic_Acid","Stearic_Acid","Oleic_Acid","Linoleic_Acid", "Linolenic_Acid","Arachidic_Acid","Ecosenoic_Acid","OSI")]
+
+cultivar_labels <- medias_cultivar$Cultivar 
+
+# Estandarizar los datos
+data_scaled <- scale(data_cluster)
+
+# n_clus= 8
+# n_clus= 7
+# n_clus= 6
+n_clus= 3
+
+
+# Determinar el número óptimo de clusters utilizando el criterio de silhouette y elbow
+library(cluster)
+silhouette_scores <- c()
+total_within_ss <- c()
+
+
+for (k in 1:n_clus) {
+  # Apply the K-means algorithm for different values of K
+  kmeans_result <- kmeans(data_scaled, centers = k, nstart = 10)
+  
+  # Calculate the silhouette score to evaluate the quality of the clusters
+  silhouette_scores[k] <- mean(silhouette(kmeans_result$cluster, dist(data_scaled)))
+  
+  # Calculate the total within-cluster sum of squares
+  total_within_ss[k] <- kmeans_result$tot.withinss
+}
+
+## Metodo de varianza explicada para k
+
+# Compute the within-cluster sum of squares (WCSS) for different values of k
+wcss <- vector(length = n_clus - 1)
+for (k in 2:n_clus) {
+  kmeans_result <- kmeans(data_cluster, centers = k, nstart = 10)
+  wcss[k-1] <- kmeans_result$tot.withinss
+}
+
+# Compute the variance explained for each value of k
+variance_explained <- 1 - (wcss / sum(wcss))
+
+# Plot the variance explained
+plot(2:n_clus, variance_explained, type = "b", pch = 19,
+     xlab = "Number of Clusters (k)", ylab = "Variance Explained",
+     main = "Variance Explained Analysis")
+
+# Find the optimal number of clusters based on the maximum variance explained
+optimal_k_var <- which.max(variance_explained) + 1
+cat("Optimal Number of Clusters por varianza:", optimal_k_var, "\n")
+
+# Graficar el criterio de silhouette
+plot(1:n_clus, silhouette_scores, type = "b", xlab = "Número de Clusters (K)",
+     ylab = "Puntaje de Silhouette", main = "Criterio de Silhouette")
+
+# Graficar el criterio de elbow
+plot(1:n_clus, total_within_ss, type = "b", xlab = "Número de Clusters (K)",
+     ylab = "Suma de Cuadrados Dentro de los Clusters", main = "Criterio de Elbow")
+
+# Manually determine the optimal number of clusters using the elbow point
+# total_within_ss[1]<-NA
+optimal_k_elbow <- 0
+for (k in 2:length(total_within_ss)) {
+  if (total_within_ss[k] - total_within_ss[k - 1] < 0.05 * total_within_ss[k]) {
+    optimal_k_elbow <- k - 1
+    break
+  }
+}
+
+optimal_k_silhouette <- which.max(silhouette_scores)
+
+# Aplicar el algoritmo K-means con el número óptimo de clusters
+kmeans_result <- kmeans(data_scaled, centers = optimal_k_silhouette, nstart = 10)
+
+# Obtener las etiquetas de cluster asignadas a cada cultivar
+cluster_labels <- kmeans_result$cluster
+
+# Imprimir los resultados
+cat("Número óptimo de clusters (Silhouette):", optimal_k_silhouette, "\n")
+cat("Número óptimo de clusters (Elbow):", optimal_k_elbow, "\n")
+cat("Etiquetas de cluster asignadas:", cluster_labels, "\n")
+cat("Etiquetas REALES:", cultivar_labels, "\n")
+
+resultados <- data_frame()
+
+tibble(
+  Real=cultivar_labels,
+  Cluster=cluster_labels
+) %>% 
+  arrange(desc(Cluster))
+
+```
+  En resumen los datos son todos distintos, si le pongo k=13, me da como que el k optmio es 13. 
+  
+  En función del analisis de clustering jerarquico la mayor cantidad de clusteres que podría formar son 6. Por eso exploro los valores desde 1 a 6 clusterings,
+  
+  Me da por el criterio de silhouette que pruebe k=6 y por el criterio de codo que pruebe 2. 
+  
+  Si pruebo 6 obtengo resultados similares
+
+## Cuando reemplazo NA por las medias o por los valores mas similares da los mismos resultados:
+  
+  Con K=8 determina que el numero óptimo de clusteres es de 8. Y me crea los clusteres de abajo, fuerzo a 6 a ver si obtengo los resultados que espero, que me junte 7 y 9: 
+
+Bien:
+* 11 y 12
+* 2, 4 y 10
+* 13 y 5
+* 1 y 6
+
+Quedaron solos:
+
+* 9
+* 3
+* 8 
+* 7
+
+Diferencia principal es que no agrupo 7 y 9. 
+K=7
+Bien:
+* 11 y 12
+* 2, 4 y 10
+* 13 y 5
+* 1, 3 y 6
+
+Quedaron solos:
+
+* 9
+* 8 
+* 7
+
+Con K=6 
+
+Bien:
+* 11 y 12
+* 2, 4 y 10  
+* 13, 5 y 8 
+* 1, 3 y 6
+
+Quedaron solos:
+
+* 9 
+* 7
+
+Quiero forzarlo con K=5 Y VER SI ME JUNTA 7 Y 9: 
+
+* Si efectivamente me los junta y son los resultados que esperaría. 
+
+* Así que esta forma de unirlos no esta tan mala, bastante relacionada con jerarquico.  
+
+  Esta es la única diferencia por asi decir con el método de clustering jerarquico, aca estima que la similitud entre 13,5 y 8 es mayor a la que tienen 7 y 9.
+  
+  En principio creo que si deberia agruparlos y que no quede ninguno solo formaria 5 grupos.
+  
+  Haria 5 grupos, y ahi quedan agrupados, resultados similares en funcion de medias independientemente de localidad. 
+  
+  Hacer análisis por localidad y en terminos generales. 
+  
+### Hago k=3 y me agrupa: 
+
+* cv_11, cv_12, cv_13, cv_5, cv_8
+* cv_7, cv_9
+* cv_1, cv_10, cv_2, cv_3, cv_4, cv_6
+
+
+### Rduo :  residuo
+### RE : estudentizado
+
+# Desconte localidad y trabajo con los residuos:
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+library(tidyverse)
+rdos<- readxl::read_xlsx("datos/datos_Martin_rdo.xlsx")
+
+# rdos<-rdos %>%
+#   filter(!(Localidad=="\"Loc_1\"" & Cultivar=="\"cv_2\"" & Repeticion==1)) %>% 
+#   filter(!(Localidad=="\"Loc_2\"" & Cultivar=="\"cv_3\"" & Repeticion==1)) %>% 
+#   filter(!(Localidad=="\"Loc_2\"" & Cultivar=="\"cv_3\"" & Repeticion==2)) %>% 
+#   filter(!(Localidad=="\"Loc_2\"" & Cultivar=="\"cv_9\"" & Repeticion==2)) %>% 
+#   filter(!(Localidad=="\"Loc_3\"" & Cultivar=="\"cv_9\"" & Repeticion==2)) %>% 
+#   filter(!(Localidad=="\"Loc_3\"" & Cultivar=="\"cv_12\"" & Repeticion==1)) %>% 
+#   filter(!(Localidad=="\"Loc_3\"" & Cultivar=="\"cv_12\"" & Repeticion==2))
+
+# 
+# nueve<- rdos %>% 
+#   filter(Cultivar=="\"cv_9\"")
+
+# analizo <- rdos %>% 
+#   group_by(Cultivar, Localidad, Repeticion) %>%   
+#   summarise(across(everything(), list(mean))) %>% 
+#   ungroup() %>% 
+#   rename_with(~str_remove(.x, "\\_1$"))
+# 
+# rdos <- rdos[, c("Cultivar", "Localidad", "Repeticion","RDUO 0 a_Tocopherol","RDUO 0 g_Tocopherol","RDUO 0 d_Tocopherol","RDUO 0 a_g_d_Tocopherol","RDUO 0 Palmitic_Acid","RDUO 0 Palmitoleic_Acid","RDUO 0 Stearic_Acid","RDUO 0 Oleic_Acid","RDUO 0 Linoleic_Acid", "RDUO 0 Linolenic_Acid","RDUO 0 Arachidic_Acid","RDUO 0 Ecosenoic_Acid","RDUO 0 OSI")]
+# 
+# nueve<- rdos %>%
+#   filter(Cultivar=="\"cv_9\"")
+```
+
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+# summary(rdos)
+```
+
+  Antes de extraer variabilidad de localidad trabajar con media o mediana es lo mismo. Después no, me parece raro, que pasa después con los residuos que ya no es lo mismo. 
+
+  Pequeño detalle la media de cada uno de los residuos me da 0, esta forzado así luego de la estimación de la regresión lineal. 
+  
+  Si trabajo con residuos, mejor tomar la media. 
+
+# Trabajando con medias:
+
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+medias_cultivar <- rdos %>% 
+  group_by(Cultivar) %>%   
+  summarise(across(everything(), list(mean))) %>% 
+  ungroup() %>% 
+  rename_with(~str_remove(.x, "\\_1$"))
+  
+data_cluster <- medias_cultivar[, c("RDUO 0 a_Tocopherol","RDUO 0 g_Tocopherol","RDUO 0 d_Tocopherol","RDUO 0 a_g_d_Tocopherol","RDUO 0 Palmitic_Acid","RDUO 0 Palmitoleic_Acid","RDUO 0 Stearic_Acid","RDUO 0 Oleic_Acid","RDUO 0 Linoleic_Acid", "RDUO 0 Linolenic_Acid","RDUO 0 Arachidic_Acid","RDUO 0 Ecosenoic_Acid","RDUO 0 OSI")]
+
+cultivar_labels <- medias_cultivar$Cultivar 
+
+# Estandarizar los datos
+data_cluster_std <- scale(data_cluster)
+
+# Ajustar el algoritmo de Clustering Hierárquico
+dist_matrix <- dist(data_cluster_std)  # Calcular la matriz de distancias
+hclust_result <- hclust(dist_matrix)  # Aplicar el algoritmo de clustering jerárquico
+
+# Graficar el dendrograma resultante
+plot(hclust_result, hang = -1, main = "", labels = cultivar_labels, xlab = "Cultivares", ylab="", cex=2.5, cex.lab=2.5, cex.axis=2.5, cex.main=2.5, cex.sub=0.1, lwd = 2)
+par(lwd=4, mar=c(0,0,0,0))
+# rect.hclust(hclust_result , k = 3, border = 2:6)
+# abline(h = 6.7, col = 'orange' )
+```
+
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+data_cluster_std_df<-as.data.frame(data_cluster_std)
+data_cluster$Cultivar<-cultivar_labels
+data_cluster_std_df$Cultivar<- cultivar_labels
+
+writexl::write_xlsx(data_cluster_std_df,"datos\\cluster_std.xlsx")
+writexl::write_xlsx(data_cluster,"datos\\cluster.xlsx")
+```
+
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+summary(data_cluster)
+```
+
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+summary(data_cluster_std_df)
+```
+
+# 08/08/2023
+# Desconte localidad y repeticion (calcule de nuevo los residuos)
+
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+library(tidyverse)
+rdos<- readxl::read_xlsx("datos/rdos_rdos_est_todos.xlsx")
+
+medias_cultivar <- rdos %>% 
+  group_by(Cultivar) %>%   
+  summarise(across(everything(), list(mean))) %>% 
+  ungroup() %>% 
+  rename_with(~str_remove(.x, "\\_1$"))
+
+
+data_cluster <- medias_cultivar[, c("RDUO 1 a_Tocopherol","RDUO 1 g_Tocopherol","RDUO 1 d_Tocopherol","RDUO 1 a_g_d_Tocopherol","RDUO 1 Palmitic_Acid","RDUO 1 Palmitoleic_Acid","RDUO 1 Stearic_Acid","RDUO 1 Oleic_Acid","RDUO 1 Linoleic_Acid", "RDUO 1 Linolenic_Acid","RDUO 1 Arachidic_Acid","RDUO 1 Ecosenoic_Acid","RDUO 1 OSI")]
+
+
+cultivar_labels <- medias_cultivar$Cultivar 
+
+# Estandarizar los datos
+data_cluster_std <- scale(data_cluster)
+
+data_cluster_mm <- bruceR::scaler(data_cluster)
+
+# Ajustar el algoritmo de Clustering Hierárquico
+dist_matrix <- dist(data_cluster_std)  # Calcular la matriz de distancias
+hclust_result <- hclust(dist_matrix)  # Aplicar el algoritmo de clustering jerárquico
+
+# Graficar el dendrograma resultante
+plot(hclust_result, hang = -1, main = "", labels = cultivar_labels, xlab = "Cultivares", ylab="", cex=2.5, cex.lab=2.5, cex.axis=2.5, cex.main=2.5, cex.sub=0.1, lwd = 2)
+par(lwd=4, mar=c(0,0,0,0))
+# rect.hclust(hclust_result , k = 3, border = 2:6)
+# abline(h = 6.7, col = 'orange' )
+```
+
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+# Ajustar el algoritmo de Clustering Hierárquico
+dist_matrix <- dist(data_cluster_mm)  # Calcular la matriz de distancias
+hclust_result <- hclust(dist_matrix)  # Aplicar el algoritmo de clustering jerárquico
+
+# Graficar el dendrograma resultante
+plot(hclust_result, hang = -1, main = "", labels = cultivar_labels, xlab = "Cultivares", ylab="", cex=2.5, cex.lab=2.5, cex.axis=2.5, cex.main=2.5, cex.sub=0.1, lwd = 2)
+par(lwd=4, mar=c(0,0,0,0))
+# rect.hclust(hclust_result , k = 3, border = 2:6)
+# abline(h = 6.7, col = 'orange' )
+```
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+data_cluster_std_df<-as.data.frame(data_cluster_std)
+data_cluster_mm$Cultivar<-cultivar_labels
+data_cluster_std_df$Cultivar<- cultivar_labels
+
+writexl::write_xlsx(data_cluster_std_df,"datos\\cluster_std_rdos.xlsx")
+writexl::write_xlsx(data_cluster_mm,"datos\\cluster_mm.xlsx")
+```
+
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+medias_cultivar <- rdos %>% 
+  group_by(Cultivar) %>%   
+  summarise(across(everything(), list(mean))) %>% 
+  ungroup() %>% 
+  rename_with(~str_remove(.x, "\\_1$"))
+  
+data_cluster <- medias_cultivar[, c("RE 1 a_Tocopherol","RE 1 g_Tocopherol","RE 1 d_Tocopherol","RE 1 a_g_d_Tocopherol","RE 1 Palmitic_Acid","RE 1 Palmitoleic_Acid","RE 1 Stearic_Acid","RE 1 Oleic_Acid","RE 1 Linoleic_Acid", "RE 1 Linolenic_Acid","RE 1 Arachidic_Acid","RE 1 Ecosenoic_Acid","RE 1 OSI")]
+
+cultivar_labels <- medias_cultivar$Cultivar 
+
+# Estandarizar los datos
+# data_cluster_std <- scale(data_cluster)
+
+# Ajustar el algoritmo de Clustering Hierárquico
+dist_matrix <- dist(data_cluster)  # Calcular la matriz de distancias
+hclust_result <- hclust(dist_matrix)  # Aplicar el algoritmo de clustering jerárquico
+
+# Graficar el dendrograma resultante
+plot(hclust_result, hang = -1, main = "", labels = cultivar_labels, xlab = "Cultivares", ylab="", cex=2.5, cex.lab=2.5, cex.axis=2.5, cex.main=2.5, cex.sub=0.1, lwd = 2)
+par(lwd=4, mar=c(0,0,0,0))
+# rect.hclust(hclust_result , k = 3, border = 2:6)
+# abline(h = 6.7, col = 'orange' )
+```
+
+  Con residuos estandarizados de Pearson si se ven otros resultados. 
+  Parece que lo mejor es hacer dos grupos y tienen sentido. 
+  
+### Despues de ver cual era el K optimo aplico K means en R
+
+  Viendo los resultados, para las bases con residuos simples y escalando por std y minmax, se deberian tener resultados similares. 
+  
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+# Aplicar el algoritmo K-means con el número óptimo de clusters
+kmeans_result <- kmeans(data_cluster_std, centers = 3, nstart = 20)
+
+# Obtener las etiquetas de cluster asignadas a cada cultivar
+cluster_labels <- kmeans_result$cluster
+
+resultados <- data_frame()
+
+tibble(
+  Real=cultivar_labels,
+  Cluster=cluster_labels
+) %>% 
+  arrange(desc(Cluster))
+```
+  Me da el mismo resultado que antes, pero junta al 7 y al 9 que son los más cercanos. 
+  Lo mismo pasa con los residuos mm. 
+
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+medias_cultivar <- rdos %>% 
+  group_by(Cultivar) %>%   
+  summarise(across(everything(), list(mean))) %>% 
+  ungroup() %>% 
+  rename_with(~str_remove(.x, "\\_1$"))
+  
+data_cluster <- medias_cultivar[, c("RDUO 0 a_Tocopherol","RDUO 0 g_Tocopherol","RDUO 0 d_Tocopherol","RDUO 0 a_g_d_Tocopherol","RDUO 0 Palmitic_Acid","RDUO 0 Palmitoleic_Acid","RDUO 0 Stearic_Acid","RDUO 0 Oleic_Acid","RDUO 0 Linoleic_Acid", "RDUO 0 Linolenic_Acid","RDUO 0 Arachidic_Acid","RDUO 0 Ecosenoic_Acid","RDUO 0 OSI")]
+
+cultivar_labels <- medias_cultivar$Cultivar 
+
+# Estandarizar los datos
+data_scaled <- scale(data_cluster)
+
+# n_clus= 12
+# n_clus= 7
+# n_clus= 6
+n_clus= 8
+
+
+# Determinar el número óptimo de clusters utilizando el criterio de silhouette y elbow
+library(cluster)
+silhouette_scores <- c()
+total_within_ss <- c()
+
+
+for (k in 1:n_clus) {
+  # Apply the K-means algorithm for different values of K
+  kmeans_result <- kmeans(data_scaled, centers = k, nstart = 10)
+  
+  # Calculate the silhouette score to evaluate the quality of the clusters
+  silhouette_scores[k] <- mean(silhouette(kmeans_result$cluster, dist(data_scaled)))
+  
+  # Calculate the total within-cluster sum of squares
+  total_within_ss[k] <- kmeans_result$tot.withinss
+}
+
+## Metodo de varianza explicada para k
+
+# Compute the within-cluster sum of squares (WCSS) for different values of k
+wcss <- vector(length = n_clus - 1)
+for (k in 2:n_clus) {
+  kmeans_result <- kmeans(data_cluster, centers = k, nstart = 10)
+  wcss[k-1] <- kmeans_result$tot.withinss
+}
+
+# Compute the variance explained for each value of k
+variance_explained <- 1 - (wcss / sum(wcss))
+
+# Plot the variance explained
+plot(2:n_clus, variance_explained, type = "b", pch = 19,
+     xlab = "Number of Clusters (k)", ylab = "Variance Explained",
+     main = "Variance Explained Analysis")
+
+# Find the optimal number of clusters based on the maximum variance explained
+optimal_k_var <- which.max(variance_explained) + 1
+cat("Optimal Number of Clusters por varianza:", optimal_k_var, "\n")
+
+# Graficar el criterio de silhouette
+plot(1:n_clus, silhouette_scores, type = "b", xlab = "Número de Clusters (K)",
+     ylab = "Puntaje de Silhouette", main = "Criterio de Silhouette")
+
+# Graficar el criterio de elbow
+plot(1:n_clus, total_within_ss, type = "b", xlab = "Número de Clusters (K)",
+     ylab = "Suma de Cuadrados Dentro de los Clusters", main = "Criterio de Elbow")
+
+# Manually determine the optimal number of clusters using the elbow point
+# total_within_ss[1]<-NA
+optimal_k_elbow <- 0
+for (k in 2:length(total_within_ss)) {
+  if (total_within_ss[k] - total_within_ss[k - 1] < 0.05 * total_within_ss[k]) {
+    optimal_k_elbow <- k - 1
+    break
+  }
+}
+
+optimal_k_silhouette <- which.max(silhouette_scores)
+
+# Aplicar el algoritmo K-means con el número óptimo de clusters
+kmeans_result <- kmeans(data_scaled, centers = optimal_k_silhouette, nstart = 10)
+
+# Obtener las etiquetas de cluster asignadas a cada cultivar
+cluster_labels <- kmeans_result$cluster
+
+# Imprimir los resultados
+cat("Número óptimo de clusters (Silhouette):", optimal_k_silhouette, "\n")
+cat("Número óptimo de clusters (Elbow):", optimal_k_elbow, "\n")
+cat("Etiquetas de cluster asignadas:", cluster_labels, "\n")
+cat("Etiquetas REALES:", cultivar_labels, "\n")
+
+resultados <- data_frame()
+
+tibble(
+  Real=cultivar_labels,
+  Cluster=cluster_labels
+) %>% 
+  arrange(desc(Cluster))
+
+```
+### Con K=5
+
+Bien:
+* 13, 5, 7
+* 1, 3 y 6
+* 11, 12 y 8 
+* 2, 4 y 10  
+* 9 
+
+### Con K=4
+
+* cv_11, cv_12, cv_13, cv_5, cv_8
+* 2, 4 y 10  
+* 1, 3 y 6
+* 7 y 9 
+
+### Hago k=3 y me agrupa: 
+
+* cv_11, cv_12, cv_13, cv_5, cv_8
+* cv_7, cv_9
+* cv_1, cv_10, cv_2, cv_3, cv_4, cv_6
+
+* Conclusion: trabajando con medias nos da lo mismo que con Juan, que seria similar a no haber descontado la localidad. El unico que no detecta lo mismo es el clustering jerarquico.
+
+# Trabajamos con Mediana: 
+
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+medias_cultivar <- rdos %>% 
+  group_by(Cultivar) %>%   
+  summarise(across(everything(), list(median))) %>% 
+  ungroup() %>% 
+  rename_with(~str_remove(.x, "\\_1$"))
+  
+data_cluster <- medias_cultivar[, c("RDUO 0 a_Tocopherol","RDUO 0 g_Tocopherol","RDUO 0 d_Tocopherol","RDUO 0 a_g_d_Tocopherol","RDUO 0 Palmitic_Acid","RDUO 0 Palmitoleic_Acid","RDUO 0 Stearic_Acid","RDUO 0 Oleic_Acid","RDUO 0 Linoleic_Acid", "RDUO 0 Linolenic_Acid","RDUO 0 Arachidic_Acid","RDUO 0 Ecosenoic_Acid","RDUO 0 OSI")]
+
+cultivar_labels <- medias_cultivar$Cultivar 
+
+# Estandarizar los datos
+data_cluster_std <- scale(data_cluster)
+
+# Ajustar el algoritmo de Clustering Hierárquico
+dist_matrix <- dist(data_cluster_std)  # Calcular la matriz de distancias
+hclust_result <- hclust(dist_matrix)  # Aplicar el algoritmo de clustering jerárquico
+
+# Graficar el dendrograma resultante
+plot(hclust_result, main = "Dendrograma de Clustering Jerárquico", labels = cultivar_labels)
+```
+
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+medias_cultivar <- rdos %>% 
+  group_by(Cultivar) %>%   
+  summarise(across(everything(), list(mean))) %>% 
+  ungroup() %>% 
+  rename_with(~str_remove(.x, "\\_1$"))
+  
+data_cluster <- medias_cultivar[, c("RDUO 0 a_Tocopherol","RDUO 0 g_Tocopherol","RDUO 0 d_Tocopherol","RDUO 0 a_g_d_Tocopherol","RDUO 0 Palmitic_Acid","RDUO 0 Palmitoleic_Acid","RDUO 0 Stearic_Acid","RDUO 0 Oleic_Acid","RDUO 0 Linoleic_Acid", "RDUO 0 Linolenic_Acid","RDUO 0 Arachidic_Acid","RDUO 0 Ecosenoic_Acid","RDUO 0 OSI")]
+
+cultivar_labels <- medias_cultivar$Cultivar 
+
+# Estandarizar los datos
+data_scaled <- scale(data_cluster)
+
+# n_clus= 12
+# n_clus= 7
+# n_clus= 6
+n_clus= 2
+
+# Aplicar el algoritmo K-means con el número óptimo de clusters
+kmed <- pam(data_scaled, k = n_clus, nstart = 10)
+
+# Obtener las etiquetas de cluster asignadas a cada cultivar
+cluster_labels <- kmed$cluster
+
+resultados <- data_frame()
+
+tibble(
+  Real=cultivar_labels,
+  Cluster=cluster_labels
+) %>% 
+  arrange(desc(Cluster))
+
+```
+
+### Hago k=3 y me agrupa: 
+
+* cv_11, cv_12, cv_13, cv_5, cv_8, cv_7
+* cv_9, 
+* cv_1, cv_10, cv_2, cv_3, cv_4, cv_6
+
+
+### Hago k=2
+* cv_11, cv_12, cv_13, cv_5, cv_8, cv_7, cv_9
+* cv_1, cv_10, cv_2, cv_3, cv_4, cv_6
+
+# Conclusion:
+
+ * Localidad y repeticion estaban daban notable variabilidad.
+ 
+ * Agrupar obviando estos factores en función de la **media** nos permite hacer 3 grupos de forma general y 5 reducidos. 
+ 
+ Antes de tener en cuenta localidad, los resultados agrupando en funcion de la media y la mediana son los mismos. 
+ 
+ * Una vez que descontamos la variabilidad de la localidad, los resultados en funcion de la media y la mediana varían. 
+ 
+ Si hacemos por la media teniendo en cuenta localidad, forma los mismos grupos que no teniendola en cuenta. 
+ 
+ En función de la mediana difiere muy poco, lo que prioriza es dejar solo al cv_9 antes que agruparlo, solo con k=2 lo termina agrupando como esperamos. 
+ 
+ * En los biplots da lo mismo todos los métodos. 
+ 
+ * En el k means, da similar la bi plot con la media. 
+ 
+ * En el jerarquico da similar a k means pero con mediana. 
+ 
+ Analizando de forma general: 
+ 
+ Vemos 3 clusteres con sentido: 
+ 
+* cv_11, cv_12, cv_13, cv_5, cv_8
+* cv_7, cv_9
+* cv_1, cv_10, cv_2, cv_3, cv_4, cv_6
+ 
+ Con la salvedad de que el que mas difiere del resto es el cv_9. 
+ 
+ Y que en funcion de las medianas prefiere agrupar a 
+
+* cv_11, cv_12, cv_13, cv_5, cv_8
+* cv_9
+* cv_1, cv_10, cv_2, cv_3, cv_4, cv_6, cv_7.
+
+  Siendo este ultimo y tercer grupo más similar a los de abajo. 
+  
+  El cluster mas general posible daria: 
+  
+* cv_11, cv_12, cv_13, cv_5, cv_8
+* cv_1, cv_10, cv_2, cv_3, cv_4, cv_6, cv_7,cv_9
+
+## Como concluimos:
+
+  Hicimos análisis basado en media y profundizamos por mediana. Nos casamos con resultados de media. Y concluimos en función de mediana. 
+  
+  A la hora de explicar explicaría todo el procedimiento:
+  
+  1- Localidad y rendimiento influyentes. 
+  
+  2- Agrupamos sin tenerlo en cuenta.
+  
+  3- Lo tuvimos en cuenta a localidad.  
+  
+  Vamos exponiendo como los va agrupando en función de los K. 
+  
+  4- Concluimos en funcion del biplot.
+  
+# Ejercicio 5
+
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+medias_cultivar <- datos %>% 
+  group_by(Cultivar, Localidad) %>%   
+  summarise(across(everything(), list(mean))) %>% 
+  ungroup() %>% 
+  rename_with(~str_remove(.x, "\\_1$"))
+
+medias_cultivar <- medias_cultivar[, c("Cultivar","Localidad","Linolenic_Acid")]
+
+medias_cultivar <- reshape2::dcast(medias_cultivar,  Localidad~Cultivar)
+
+clima_medias_loc <- datos %>% 
+  group_by(Localidad) %>%   
+  summarise(across(everything(), list(mean))) %>% 
+  ungroup() %>% 
+  rename_with(~str_remove(.x, "\\_1$"))
+
+clima_medias_loc <- clima_medias_loc[,c("Localidad","Tmx_IF.MF","Tmed_IF.MF","T_mn_IF.MF","pp_IF.MF","etp_IF..MF")]
+
+data_merge1 <- merge(medias_cultivar, clima_medias_loc, by = c("Localidad", "Localidad"))
+
+write.csv(data_merge1,"C:/Users/marti/Desktop/GAB2023/datos/data_merge1.csv", row.names=FALSE)
+
+# medianas_cultivar <- datos %>% 
+#   group_by(Cultivar, Localidad) %>%   
+#   summarise(across(everything(), list(median))) %>% 
+#   ungroup() %>% 
+#   rename_with(~str_remove(.x, "\\_1$"))
+# 
+# write.csv(medianas_cultivar,"C:/Users/marti/Desktop/GAB2023/datos/medianas_ej_5.csv", row.names=FALSE)
+```
+
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+interaccion <- readxl::read_xlsx("datos/datos_Martin_residuos_interaccion.xlsx")
+
+medias_cultivar <- interaccion %>% 
+  group_by(Cultivar, Localidad) %>%   
+  summarise(across(everything(), list(mean))) %>% 
+  ungroup() %>% 
+  rename_with(~str_remove(.x, "\\_1$"))
+
+medias_cultivar <- medias_cultivar[, c("Cultivar","Localidad","RE 0 Linolenic_Acid")]
+
+medias_cultivar <- reshape2::dcast(medias_cultivar,  Localidad~Cultivar)
+
+clima_medias_loc <- interaccion %>% 
+  group_by(Localidad) %>%   
+  summarise(across(everything(), list(mean))) %>% 
+  ungroup() %>% 
+  rename_with(~str_remove(.x, "\\_1$"))
+
+clima_medias_loc <- clima_medias_loc[,c("Localidad","Tmx_IF.MF","Tmed_IF.MF","T_mn_IF.MF","pp_IF.MF","etp_IF..MF")]
+
+data_merge_interaccion <- merge(medias_cultivar, clima_medias_loc, by = c("Localidad", "Localidad"))
+
+write.csv(data_merge_interaccion,"C:/Users/marti/Desktop/GAB2023/datos/data_merge_interaccion.csv", row.names=FALSE)
+```
+
+# Ejercico 5
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+lm<- lm(interaccion$'RE 0 Linolenic_Acid'~interaccion$'Tmx_IF.MF', data = interaccion) 
+summary(lm)
+```
+
+
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+lm<- lm(interaccion$'RE 0 Linolenic_Acid'~interaccion$'Tmed_IF.MF', data = interaccion) 
+summary(lm)
+```
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+lm<- lm(interaccion$'RE 0 Linolenic_Acid'~interaccion$'T_mn_IF.MF', data = interaccion) 
+summary(lm)
+```
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+lm<- lm(interaccion$'RE 0 Linolenic_Acid'~interaccion$'pp_IF.MF', data = interaccion) 
+summary(lm)
+```
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+lm<- lm(interaccion$'RE 0 Linolenic_Acid'~interaccion$'etp_IF..MF', data = interaccion) 
+summary(lm)
+```
+
+
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+lm<- lm(interaccion$'RE 0 Linolenic_Acid'~interaccion$'pp_IF.MF'+interaccion$'Tmx_IF.MF'+interaccion$'etp_IF..MF', data = interaccion) 
+summary(lm)
+```

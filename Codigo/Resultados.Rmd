@@ -1,0 +1,816 @@
+---
+title: "Untitled"
+author: "Rodriguez Nuñez Martin"
+date: "2023-07-31"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Preguntas para nivel de posgrado:
+
+# 1) ¿Cuáles cultivares de colza presentan mayor contenido de ácido linolénico y menor contenido de ácidos grasos saturados?
+
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+library(tidyverse)
+
+datos<-tibble(
+  "Cultivar"=c("2","5","4","9","13","8","12","6","11","10","7","3","1"),
+  "Media"=c(8.86,8.64,8.52,8.49,8.47,8.46,8.45,8.44,8.41,8.40,8.29,8.14,8.06),
+  "E.E."=c(0.43,0.42,0.56,0.44,0.43,0.44,0.45,0.44,0.44,0.43,0.45,0.43,0.44),
+  "DGC"= c("A","B","B","B","B","B","B","B","B","B","B","C","C")
+  )
+
+# colored barplot according Tukey's test results
+ggplot(datos, aes(reorder(factor(Cultivar),-Media), Media, fill = DGC)) + 
+  geom_bar(stat = "identity", width=0.8, alpha=1, show.legend = FALSE) +
+  scale_fill_brewer(palette = "Spectral") +
+  geom_errorbar(aes(ymin=datos$Media-datos$E.E., ymax=datos$Media+datos$E.E.), width = 0.3) + 
+  labs(x="Cultivar", y="Ácido graso linolénico [%]") +
+  theme_bw() + 
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        text = element_text(size=30),
+          legend.position="bottom",
+          axis.text.x=element_text(angle=0, hjust=1)) +
+  geom_text(aes(label=DGC), nudge_x = 0, nudge_y = 0.6, size = 8)+ 
+  coord_cartesian(ylim=c(7.5,9.5))+
+  geom_text(aes(label = format(Media, digits = 3), y = 7.5), size=10)
+```
+  Modelo final implementado:
+* Fijo: cultivar + repetición
+* Aleatorio: localidad 
+* Función de varianza: cultivar
+
+  Mencionar de todos los modelos que probamos con cual nos quedamos. 
+
+1- 
+Fijo: cultivar + repetición
+Aleatorio: localidad 
+Función de varianza:
+
+2-
+Fijo: cultivar + repetición
+Aleatorio: localidad 
+Función de varianza: cultivar
+
+
+### Medidas de ajuste del modelo
+
+| n  | AIC   | BIC | logLik | Sigma | $R^2 adj.$ |
+|----|:-------:|:-------:|:-------:|:-------:|:-------:|
+| 104 | 138.02 | 208.01 | -41.01 |0.39 | 0.06 |
+
+### Pruebas de hipótesis marginales
+
+| Source|numDF|denDF|F-value|p-value|
+|-----------|:--------------:|:-------:|:-------:|:-------:|
+|Cultivar  	|   12	 |  87	| 7.75	| <0.0001 |
+|Repeticion	 |   1	|   87	 |  0.18 | 0.6708 |
+
+
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+datos<-tibble(
+  "Cultivar"=c("9","7","1","4","5","6","3","11","2","10","13","12","8"),
+  "Media"=c(7.18,6.93,6.77,6.63,6.57,6.56,6.47,6.47,6.47,6.46,6.43,6.26,5.99),
+  "E.E."=c(0.18,0.18,0.18,0.18,0.18,0.18,0.18,0.18,0.18,0.18,0.18,0.18,0.18),
+  "DGC"= c("A","A","A","B","B","B","B","B","B","B","B","B","C")
+  )
+
+# colored barplot according Tukey's test results
+ggplot(datos, aes(reorder(factor(Cultivar),-Media), Media, fill = DGC)) + 
+  geom_bar(stat = "identity", width=0.8, alpha=1, show.legend = FALSE) +
+  scale_fill_brewer(palette = "Spectral") +
+  geom_errorbar(aes(ymin=datos$Media-datos$E.E., ymax=datos$Media+datos$E.E.), width = 0.3) + 
+  labs(x="Cultivar", y="Ácidos grasos saturados [%]") +
+  theme_bw() + 
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        text = element_text(size=30),
+          legend.position="bottom",
+          axis.text.x=element_text(angle=0, hjust=1)) +
+  geom_text(aes(label=DGC), nudge_x = 0, nudge_y = 0.4, size = 8)+ 
+  coord_cartesian(ylim=c(5.5,7.7))+
+  geom_text(aes(label = format(Media, digits = 3), y = 5.5), size=10)
+```
+  Modelo final implementado:
+* Fijo: cultivar + repetición
+* Aleatorio: localidad 
+* Función de varianza:
+
+  Mencionar de todos los modelos que probamos con cual nos quedamos. 
+
+1- 
+Fijo: cultivar + repetición
+Aleatorio: localidad 
+Función de varianza: 
+
+2-
+Fijo: cultivar + repetición
+Aleatorio: localidad 
+Función de varianza: cultivar
+
+3- 
+Fijo: cultivar + repetición
+Aleatorio: localidad 
+Función de varianza: localidad
+
+## Conjunto
+
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+library(tidyverse)
+library(ggrepel)
+
+datos<-tibble(
+  "Cultivar"=c("cv_2","cv_5","cv_4","cv_9","cv_13","cv_8","cv_12","cv_6","cv_11","cv_10","cv_7","cv_3","cv_1"),
+  "ac_lin"=c(8.86,8.64,8.52,8.49,8.47,8.46,8.45,8.44,8.41,8.40,8.29,8.14,8.06),
+  "ac_lin_ee"=c(0.43,0.42,0.56,0.44,0.43,0.44,0.45,0.44,0.44,0.43,0.45,0.43,0.44),
+  "ac_lin_DGC"= c("A","B","B","B","B","B","B","B","B","B","B","C","C"),
+  "ac_sat"=c(6.47,6.57,6.63,7.18,6.43,5.99,6.26,6.56,6.47,6.46,6.93,6.47,6.77),
+  "ac_sat_DGC"=c("B","B","B","A","B","C","B","B","B","B","A","B","A"),
+  "dgc_comb" = c("A","B","B","B","B","C","B","B","B","B","B","B","B"),
+  "ac_sat_ee"=c(0.18,0.18,0.18,0.18,0.18,0.18,0.18,0.18,0.18,0.18,0.18,0.18,0.18)
+  )
+
+# mean(datos$ac_lin) #8.433077
+# mean(datos$ac_sat) #6.553077
+
+# colored barplot according Tukey's test results
+ggplot(datos, aes(ac_sat,ac_lin, color = dgc_comb)) + #, color = ac_lin_DGC, shape = ac_sat_DGC
+  geom_point(size=5) +
+  geom_text_repel(aes(label = Cultivar), size = 10)+
+  theme_bw() + 
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        text = element_text(size=30),
+          legend.position="none",
+          axis.text.x=element_text(angle=0, hjust=1))+
+  geom_hline(yintercept=8.433077, linetype="dashed", 
+                color = "red", size=2)+
+  geom_vline(xintercept=6.553077, linetype="dashed", 
+                color = "red", size=2)+
+  geom_rect(aes(xmin = -Inf, xmax = 6.553077, ymin = 8.433077, ymax = Inf),
+                   fill = "yellow", alpha = 0.01)+
+    labs(x="Ácidos grasos saturados [%]", y="Ácido graso linolénico [%]")
+```
+Recomendamos cv_2 + cv_8 diferencias estadisticamente significativas.
+cv_12 y cv_13 si las diferencias son apreciables desde el punto de vista economico luego de hablar con un especialista. 
+
+### Medidas de ajuste del modelo
+
+| n  | AIC   | BIC | logLik | Sigma | $R^2 adj.$ |
+|----|:-------:|:-------:|:-------:|:-------:|:-------:|
+| 104 | 166.55 | 206.55 | -67.28 |0.42 | 0.30 |
+
+### Pruebas de hipótesis marginales
+
+| Source|numDF|denDF|F-value|p-value|
+|-----------|:--------------:|:-------:|:-------:|:-------:|
+|Cultivar  	|   12	 |  87	|   3.94	| 0.0001 |
+|Repeticion	 |   1	|   87	 |  0.87 | 0.3536 |
+
+
+# 2) ¿Cómo agruparía los cultivares con base en la similitud del perfil de ácidos grasos, tocoferoles e índice de estabilidad?
+
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+k<-read_csv("datos/k_optimo.csv")
+
+ggplot(k, aes(k$...1,k$`Calinski Harabasz Score`)) + #, color = ac_lin_DGC, shape = ac_sat_DGC
+  geom_point(size=5) +
+  geom_line()+
+  theme_bw() + 
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        text = element_text(size=30),
+          legend.position="none",
+          axis.text.x=element_text(angle=0, hjust=1))+
+    labs(x="Número de clusteres", y="Calinski Harabasz Score")+
+  scale_x_continuous(n.breaks=12)
+```
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+ggplot(k, aes(k$...1,k$`Silhouette Score`)) + #, color = ac_lin_DGC, shape = ac_sat_DGC
+  geom_point(size=5) +
+  geom_line()+
+  theme_bw() + 
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        text = element_text(size=30),
+          legend.position="none",
+          axis.text.x=element_text(angle=0, hjust=1))+
+    labs(x="Número de clusteres", y="Silhouette Score")+
+  scale_x_continuous(n.breaks=12)
+```
+
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+rdos<- readxl::read_xlsx("datos/datos_Martin_rdo.xlsx")
+
+# rdos<-rdos %>%
+#   filter(!(Localidad=="\"Loc_1\"" & Cultivar=="\"cv_2\"" & Repeticion==1)) %>%
+#   filter(!(Localidad=="\"Loc_2\"" & Cultivar=="\"cv_3\"" & Repeticion==1)) %>%
+#   filter(!(Localidad=="\"Loc_2\"" & Cultivar=="\"cv_3\"" & Repeticion==2)) %>%
+#   filter(!(Localidad=="\"Loc_2\"" & Cultivar=="\"cv_9\"" & Repeticion==2)) %>%
+#   filter(!(Localidad=="\"Loc_3\"" & Cultivar=="\"cv_9\"" & Repeticion==2)) %>%
+#   filter(!(Localidad=="\"Loc_3\"" & Cultivar=="\"cv_12\"" & Repeticion==1)) %>%
+#   filter(!(Localidad=="\"Loc_3\"" & Cultivar=="\"cv_12\"" & Repeticion==2))
+
+medias_cultivar <- rdos %>%
+  group_by(Cultivar) %>%
+  summarise(across(everything(), list(mean))) %>%
+  ungroup() %>%
+  rename_with(~str_remove(.x, "\\_1$"))
+
+data_cluster <- medias_cultivar[, c("RDUO 0 a_Tocopherol","RDUO 0 g_Tocopherol","RDUO 0 d_Tocopherol","RDUO 0 a_g_d_Tocopherol","RDUO 0 Palmitic_Acid","RDUO 0 Palmitoleic_Acid","RDUO 0 Stearic_Acid","RDUO 0 Oleic_Acid","RDUO 0 Linoleic_Acid", "RDUO 0 Linolenic_Acid","RDUO 0 Arachidic_Acid","RDUO 0 Ecosenoic_Acid","RDUO 0 OSI")]
+
+# Tuve que cambiar porque los resultados se veian modifcados
+# cond_clim<- readxl::read_excel("datos/condiciones_climaticas.xlsx")
+# proc_quim<- readxl::read_excel("datos/perfiles_quimicos.xlsx")
+# 
+# proc_quim <-  rename(proc_quim,"Ambiente"="Localidad")
+# 
+# datos <- merge(proc_quim, cond_clim, by.x=c("Ambiente", "Cultivar"), by.y=c("Ambiente", "Cultivar"), all.x = TRUE)
+# 
+# datos <- datos[!duplicated(datos), ]
+# 
+# datos$Palmitoleic_Acid<-as.numeric(datos$Palmitoleic_Acid)
+# 
+# datos<- datos %>%
+#   group_by(Ambiente, Cultivar, Repetición, inicio_de_floración_IF, Madurez_fisiologica_MF) %>%
+#   summarise(across(everything(), list(mean))) %>% 
+#   ungroup() %>% 
+#   rename_with(~str_remove(.x, "\\_1$"))
+# 
+# datos<-datos[-c(34,36),]
+# 
+# medias_cultivar <- datos %>% 
+#   group_by(Cultivar) %>%   
+#   summarise(across(everything(), list(mean))) %>% 
+#   ungroup() %>% 
+#   rename_with(~str_remove(.x, "\\_1$"))
+#   
+# data_cluster <- medias_cultivar[, c("a_Tocopherol","g_Tocopherol","d_Tocopherol","a_g_d_Tocopherol","Palmitic_Acid","Palmitoleic_Acid","Stearic_Acid","Oleic_Acid","Linoleic_Acid", "Linolenic_Acid","Arachidic_Acid","Ecosenoic_Acid","OSI","Oil_content")]
+# cultivar_labels <- medias_cultivar$Cultivar 
+
+cultivar_labels <- medias_cultivar$Cultivar 
+
+# Estandarizar los datos
+data_cluster_std <- scale(data_cluster)
+
+# Ajustar el algoritmo de Clustering Hierárquico
+dist_matrix <- dist(data_cluster_std)  # Calcular la matriz de distancias
+hclust_result <- hclust(dist_matrix)  # Aplicar el algoritmo de clustering jerárquico
+
+# Graficar el dendrograma resultante
+plot(hclust_result, hang = -1, main = "", labels = cultivar_labels, xlab = "Cultivar", ylab="", cex=2.5, cex.lab=2.5, cex.axis=2.5, cex.main=2.5, cex.sub=0.1, lwd = 2)
+par(lwd=4, mar=c(0,0,0,0))
+rect.hclust(hclust_result , k = 3, border = 2:5.65)
+abline(h = 6.15, col = 'orange')
+```
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+knitr::include_graphics("imagenes/Biplot_residuos_nombres_corregidos.png")
+```
+
+# 3) ¿El contenido de ácido linolénico se ve afectado por la temperatura durante el periodo entre el inicio de floración y la madurez fisiológica (IF-MF)?
+
+  La interpretación de los residuos parciales es útil para examinar cómo una variable independiente específica se relaciona con la variable dependiente, una vez que se han controlado todas las demás variables. Si observas una relación inversamente proporcional entre los residuos parciales y una variable independiente, esto sugiere que esa variable independiente está relacionada de manera única con la variable dependiente, independientemente del efecto de las otras variables.
+
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+library(ggpubr)
+library(ggplot2)
+
+datos<- read.csv("datos/datos_Martin_original.csv")
+
+# ggplot(data = datos, aes(x = Tmx_IF.MF, y = Linolenic_Acid)) +
+#   geom_smooth(method = "lm",size=3) +
+#                    geom_point(size=4) +
+#                    stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),label.sep = "\n", size = 10, label.y=10)+
+#                    stat_regline_equation(size = 10,label.y = 10.2)+
+#   labs(y="Ácido graso linolénico [%]", x="Temperatura máxima [ºC]") +
+#   theme_bw() +
+#   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+#         text = element_text(size=30),
+#           legend.position="bottom",
+#           axis.text.x=element_text(angle=0, hjust=1))
+# 
+# ggplot(data = datos, aes(x = Tmed_IF.MF, y = Linolenic_Acid)) +
+#   geom_smooth(method = "lm",size=3) +
+#                    geom_point(size=4) +
+#                    stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),label.sep = "\n", size = 10, label.y=10)+
+#                    stat_regline_equation(size = 10,label.y = 10.2)+
+#   labs(y="Ácido graso linolénico [%]", x="Temperatura media [ºC]") +
+#   theme_bw() +
+#   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+#         text = element_text(size=30),
+#           legend.position="bottom",
+#           axis.text.x=element_text(angle=0, hjust=1))
+# 
+# ggplot(data = datos, aes(x = T_mn_IF.MF, y = Linolenic_Acid)) +
+#   geom_smooth(method = "lm",size=3) +
+#                    geom_point(size=4) +
+#                    stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),label.sep = "\n", size = 10, label.y=10)+
+#                    stat_regline_equation(size = 10,label.y = 10.2)+
+#   labs(y="Ácido graso linolénico [%]", x="Temperatura mínima [ºC]") +
+#   theme_bw() +
+#   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+#         text = element_text(size=30),
+#           legend.position="bottom",
+#           axis.text.x=element_text(angle=0, hjust=1))
+```
+
+  Hablar de que es significativo y el p valor otorgado y la prueba de hipotesis de que el beta es distinto de 0. 
+  
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 12}
+library(reshape2)
+
+datos<- read.csv("datos/datos_Martin_original.csv")
+
+corr<- datos %>% 
+  select(Linolenic_Acid,Tmx_IF.MF,Tmed_IF.MF,T_mn_IF.MF,pp_IF.MF,etp_IF..MF) %>% 
+  rename("Ácido graso linolénico" = Linolenic_Acid,
+         "Temperatura máxima" = Tmx_IF.MF,
+         "Temperatura mínima" = T_mn_IF.MF,
+          "Temperatura media" = Tmed_IF.MF,
+         "Precipitación" = pp_IF.MF,
+         "Evapotranspiración" = etp_IF..MF
+         )
+
+# cormat <- round(cor(corr, method = "spearman"),2)
+cormat <- round(cor(corr),2)
+
+melted_cormat <- melt(cormat)
+
+### Get lower triangle of the correlation matrix
+get_lower_tri<-function(cormat){
+  cormat[upper.tri(cormat)] <- NA
+  return(cormat)
+}
+### Get upper triangle of the correlation matrix
+get_upper_tri <- function(cormat){
+  cormat[lower.tri(cormat)]<- NA
+  return(cormat)
+}
+
+upper_tri <- get_upper_tri(cormat)
+upper_tri
+
+
+### Melt
+melted_cormat <- melt(upper_tri, na.rm = TRUE)
+
+### Heatmap
+ggheatmap<-ggplot(data = melted_cormat, aes(Var2, Var1, fill = value))+
+ geom_tile(color = "white")+
+ scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
+   midpoint = 0, limit = c(-1,1), space = "Lab", 
+   name="Pearson\nCorrelation") +
+  theme_minimal()+ 
+ theme(axis.text.x = element_text(angle = 45, vjust = 1, 
+    size = 12, hjust = 1))+
+ coord_fixed()
+
+# Print the heatmap
+ggheatmap + geom_text(aes(Var2, Var1, label = value), color = "black", 
+                      size = 10) +
+  theme(
+  axis.title.x = element_blank(),
+  axis.text.x = element_text(size=14,hjust=0.5, angle=90),
+  axis.text.y = element_text(size=14,hjust=0.5, angle=0),
+  axis.title.y = element_blank(),
+  panel.grid.major = element_blank(),
+  panel.border = element_blank(),
+  panel.background = element_blank(),
+  axis.ticks = element_blank(),
+  legend.justification = c(1, 0),
+  legend.position = c(0.3, 0.8),
+  text = element_text(size=18),
+  legend.direction = "horizontal")+
+  guides(fill = guide_colorbar(barwidth = 7, barheight = 1,
+                title.position = "top", title.hjust = 0.5))
+
+```
+  Correlacion mas que todo para eliminar temperaturas redundantes. 
+
+### Interpretar temperatura
+
+Primer modelo simple:
+
+Análisis de regresión lineal
+
+
+   Variable   	N 	 R² 	R² Aj	ECMP	 AIC  	 BIC  
+Linolenic_Acid	101	0,68	 0,67	0,21	120,51	133,38
+
+
+Coeficientes de regresión y estadísticos asociados
+
+  Coef    	 Est.   	 E.E.  	LI(95%)	LS(95%)	 T    	p-valor	CpMallows	VIF 
+const     	   14,64	   0,72	  13,21	  16,07	 20,39	<0,0001	         	    
+Tmx_IF.MF 	   -0,28	   0,03	  -0,33	  -0,23	-10,74	<0,0001	   117,28	2,96
+pp_IF.MF  	    0,01	5,9E-04	4,3E-03	   0,01	  9,21	<0,0001	    86,74	1,78
+etp_IF..MF	-2,9E-04	4,6E-03	  -0,01	   0,01	 -0,06	 0,9487	     2,00	2,13
+
+  Incluyo P y P^2 + Evapotrans + temp
+  
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+library(ggpubr)
+library(ggplot2)
+
+datos<- readxl::read_excel("datos/datos_Martin_rpar_temp.xlsx")
+
+datos$`Linol RPAR_Tmx_IF.MF`<- as.numeric(datos$`Linol RPAR_Tmx_IF.MF`)
+
+ggplot(data = datos, aes(x = Tmx_IF.MF, y = datos$`Linol RPAR_Tmx_IF.MF`)) +
+  geom_smooth(method = "lm",size=2, se = FALSE, color="blue") +
+  geom_smooth(method = "gam",size=1, se = FALSE, linetype = "dashed", color="red")+
+                   geom_point(size=4) +
+                   # stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),label.sep = "\n", size = 10, label.y=1.3)+
+                   # stat_regline_equation(size = 10,label.y = 1.55)+
+  labs(y="Residuos parciales ácido graso linolénico", x="Temperatura máxima [ºC]") +
+  theme_bw() +
+  ylim(-2.22,1.6)+
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        text = element_text(size=30),
+          legend.position="none",
+          axis.text.x=element_text(angle=0, hjust=1))
+```
+
+* Luego de chequear los residuos excluyo 5 datos: 7,79,30,29,37 por tener resiudos altos. 
+
+* Interpretar resultado. 
+
+* Tmax tiene vínculo negativo, con cada aumento en 1 grado centigrado en la temperatura el rendimiento disminuye en 0,27. 
+
+Podria ser cuadratico o lineal, cambia el lugar donde se encuentra el óptimo.
+
+#### Mejor modelo estimado (no mas, sin evapo da mejor)
+
+Análisis de regresión lineal
+
+   Variable   	N 	 R² 	R² Aj	ECMP	 AIC 	 BIC 
+Linolenic_Acid	99	0,82	 0,81	0,12	70,29	85,86
+
+Coeficientes de regresión y estadísticos asociados
+
+  Coef     	 Est.  	 E.E.  	LI(95%)	LS(95%)	 T   	p-valor	CpMallows	 VIF  
+const      	 -19,85	   3,92	 -27,63	 -12,07	-5,07	<0,0001	         	      
+pp_IF.MF   	4,2E-03	4,6E-04	3,3E-03	   0,01	 9,11	<0,0001	    85,96	  1,88
+etp_IF..MF 	1,1E-04	3,4E-03	  -0,01	   0,01	 0,03	 0,9734	     3,00	  2,18
+Tmx_IF.MF  	   2,49	   0,31	   1,88	   3,10	 8,08	<0,0001	    68,33	733,68
+Tmx_IF.MF^2	  -0,05	   0,01	  -0,07	  -0,04	-8,96	<0,0001	    83,36	725,76
+
+* Da significativa la relación cuadratica entre acido linolenico y temperatura maxima. 
+
+### Precipitación
+
+  Para precipitación hicimos lo mismo porque era el otro termino significativo. 
+
+  Incluyo T y T^2 + Evapotrans + precip
+
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+library(ggpubr)
+library(ggplot2)
+
+datos<- readxl::read_excel("datos/residuos_parciales_ac_lin_precip.xlsx")
+
+datos$`Linol RPAR_pp_IF.MF`<- as.numeric(datos$`Linol RPAR_pp_IF.MF`)
+
+ggplot(data = datos, aes(x = pp_IF.MF, y = datos$`Linol RPAR_pp_IF.MF`)) +
+  geom_smooth(method = "lm",size=2, se = FALSE, color="blue") +
+  geom_smooth(method = "gam",size=1, se = FALSE, linetype = "dashed", color="red")+
+                   geom_point(size=4) +
+                   # stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),label.sep = "\n", size = 10, label.y=1.3)+
+                   # stat_regline_equation(size = 10,label.y = 1.55)+
+  labs(y="Residuos parciales ácido graso linolénico", x="Precipitación") +
+  theme_bw() +
+  ylim(-2.22,1.6)+
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        text = element_text(size=30),
+          legend.position="none",
+          axis.text.x=element_text(angle=0, hjust=1))
+```
+
+Análisis de regresión lineal
+
+   Variable   	N 	 R² 	R² Aj	ECMP	 AIC  	 BIC  
+Linolenic_Acid	99	0,67	 0,66	0,22	128,34	143,91
+
+
+Coeficientes de regresión y estadísticos asociados
+
+  Coef    	 Est.   	 E.E.  	LI(95%) 	LS(95%)	 T   	p-valor	CpMallows	VIF  
+const     	   15,11	   0,72	   13,68	  16,55	20,87	<0,0001	         	     
+Tmx_IF.MF 	   -0,29	   0,03	   -0,35	  -0,23	-9,88	<0,0001	   100,54	 3,69
+etp_IF..MF	-1,6E-03	4,6E-03	   -0,01	   0,01	-0,34	 0,7345	     3,12	 2,23
+pp_IF.MF  	    0,01	3,5E-03	 4,2E-03	   0,02	 3,19	 0,0019	    13,20	60,95
+pp_IF.MF^2	-2,6E-05	1,5E-05	-5,6E-05	3,8E-06	-1,73	 0,0864	     6,00	53,90
+
+  Precipitación al cuadrado da hasta ahi nomas significativa. 
+
+## Contornos:
+
+  Porque procedimos a analizar la relación de vinculación entre las dos variables destacadas como mayormente significativas para la variacion de acido linolenico. 
+
+## Mejor modelo: 
+
+Análisis de regresión lineal
+
+   Variable   	N  	 R² 	R² Aj	ECMP	 AIC  	 BIC  
+Linolenic_Acid	104	0,73	 0,72	0,20	125,67	138,89
+
+Coeficientes de regresión y estadísticos asociados
+
+  Coef     	 Est.  	 E.E.  	LI(95%)	LS(95%)	 T   	p-valor	CpMallows	 VIF  
+const      	 -22,58	   4,83	 -32,16	 -13,01	-4,68	<0,0001	         	      
+pp_IF.MF   	4,5E-03	5,8E-04	3,4E-03	   0,01	 7,83	<0,0001	    63,33	  1,96
+Tmx_IF.MF  	   2,70	   0,39	   1,93	   3,47	 6,98	<0,0001	    50,78	722,36
+Tmx_IF.MF^2	  -0,06	   0,01	  -0,07	  -0,04	-7,70	<0,0001	    61,26	706,80
+
+**Elimine datos sospechosos:**
+
+7,8,29,30,37,63,79
+
+Análisis de regresión lineal
+
+   Variable   	N 	 R² 	R² Aj	ECMP	 AIC 	 BIC 
+Linolenic_Acid	101	0,82	 0,81	0,12	64,01	76,88
+
+Coeficientes de regresión y estadísticos asociados
+
+  Coef     	 Est.  	 E.E.  	LI(95%)	LS(95%)	 T   	p-valor	CpMallows	 VIF  
+const      	 -18,33	   3,86	 -25,99	 -10,67	-4,75	<0,0001	         	      
+pp_IF.MF   	4,3E-03	4,6E-04	3,4E-03	   0,01	 9,40	<0,0001	    90,39	  1,93
+Tmx_IF.MF  	   2,37	   0,31	   1,75	   2,98	 7,66	<0,0001	    60,66	751,20
+Tmx_IF.MF^2	  -0,05	   0,01	  -0,06	  -0,04	-8,57	<0,0001	    75,52	736,39
+
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+datos<- read.csv("datos/datos_Martin_original.csv")
+
+print("Temperatura")
+print(max(datos$`Tmx_IF.MF`))
+print(min(datos$`Tmx_IF.MF`))
+
+print("Precipitacion")
+print(max(datos$`pp_IF.MF`))
+print(min(datos$`pp_IF.MF`))
+
+# 1 vez:
+# B = matrix(c(5.4E-06, 0, 0, -0.06), ncol=2)
+# b = matrix(c(3.2E-03, 2.72))
+# solucion=-0.5*solve(B)%*%b 
+# 
+# p = -296.29630
+# t = 22.66667
+
+# p = 0
+# t=20.9
+# -22.82+3.2E-03*p+2.72*t+5.4E-06*p*p-0.06*t*t
+-22.82+3.2E-03*x+2.72*y+5.4E-06*x*x-0.06*y*y
+
+# 7.532593
+
+# Ultima ecuación
+# p = 0
+# t=20.9
+# -19.82+4.2E-03*p+2.49*t-0.05*t*t
+# -19.82+4.2E-03*x+2.49*y-0.05*y*y
+
+# Luego elimnar datos
+# x = 0
+# y =29.9
+# -25.21+0.01*x+2.49*y-0.06*y*y
+# 
+# -22.58+4.5E-03*x+2.70*y-0.06*y*y
+# 
+# x = 277.8
+# y =20.9
+
+-18.33+4.3E-03*x+2.37*y-0.05*y*y
+
+# -25.21+0.01*x+2.49*y-0.06*y*y
+```
+
+```{r, echo=F,message=F,warning=F,fig.height= 30, fig.width= 18}
+knitr::include_graphics("imagenes/superficie.jpeg")
+```
+
+```{r, echo=F,message=F,warning=F,fig.height= 30, fig.width= 18}
+knitr::include_graphics("imagenes/contorno.jpeg")
+```
+
+* El optimo para el rendimiento del ácido linolenico se alcanza en precipitaciones maximas de 277.8 y temperaturas máximas inferiores o iguales a 23.5.
+
+# 4) Para cada uno de los componentes del grano medido, ¿cuál de los factores (cultivar o ambiente) aporta mayor variación? ¿Existe interacción genotipo-ambiente? ¿Qué cultivar/es recomendaría en sentido amplio o sitio específico?
+
+# Porcentaje de variabilidad
+
+```{r, echo=F,message=F,warning=F,fig.height= 30, fig.width= 18}
+knitr::include_graphics("imagenes/perfiles_blups.png")
+```
+
+### General:
+
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 12}
+library(tidyverse)
+library(ggplot2)
+library(patchwork)
+
+df <- readxl::read_xlsx('datos/blup_Cultivar.xlsx')
+
+df[df$compuesto == 'd_Tocopherol',]$compuesto = 'Delta Tocopherol'
+df[df$compuesto == 'alfa tocopherol',]$compuesto = 'Alfa Tocopherol'
+df[df$compuesto == 'g_Tocopherol',]$compuesto = 'Gamma Tocopherol'
+df[df$compuesto == 'Palmitic_Acid',]$compuesto = 'Ácido graso Palmitico'
+df[df$compuesto == 'Palmitoleic_Acid',]$compuesto = 'Ácido graso Palmitoleico'
+df[df$compuesto == 'Stearic_Acid',]$compuesto = 'Ácido graso Estearico'
+df[df$compuesto == 'Oleic_Acid',]$compuesto = 'Ácido graso Oleico'
+df[df$compuesto == 'Linoleic_Acid',]$compuesto = 'Ácido graso Linoleico'
+df[df$compuesto == 'Arachidic_Acid',]$compuesto = 'Ácido graso Araquidonico'
+df[df$compuesto == 'Ecosenoic_Acid',]$compuesto = 'Ácido graso Ecosenoico'
+
+df[df$compuesto == 'a_g_d_Tocopherol',]$compuesto = 'Tocopheroles totales'
+df[df$compuesto == 'Linolenic_Acid',]$compuesto = 'Ácido graso linolénico'
+df[df$compuesto == 'Acidos Insaturados',]$compuesto = "Ácidos grasos insaturados"
+df[df$compuesto == "Acidos Saturados",]$compuesto = "Ácidos grasos saturados"
+df[df$compuesto == 'OSI',]$compuesto = 'Índice de estabilidad oxidativa'
+df[df$compuesto == 'il_content',]$compuesto = 'Contenido de aceite'
+
+unique(df$compuesto)
+df$max <- 0
+
+df<-df %>% 
+  filter(compuesto %in% c("Ácidos grasos insaturados","Ácidos grasos saturados",'Tocopheroles totales','Ácido graso linolénico','Índice de estabilidad oxidativa','Contenido de aceite'))
+
+for (c in unique(df$compuesto)){
+    m = max(df[(df$compuesto == c) ,]$BLUP)
+    n = min(df[(df$compuesto == c),]$BLUP)
+    df[(df$compuesto == c) &  (df$BLUP >= m),]$max = 1
+    df[(df$compuesto == c) &  (df$BLUP <= n),]$max = -1
+  
+}
+
+
+for (x in unique(df$compuesto)){
+# print(x)
+df1 <- df[df$compuesto == x,]
+#fct_reorder(cultivar , BLUP,.desc=T)
+plot1 <- ggplot(df1 , aes (x=factor(cultivar, levels=c('cv_1', 'cv_2', 'cv_3',
+                                                       'cv_4','cv_5','cv_6',
+                                                       'cv_7','cv_8','cv_9',
+                                                       'cv_10','cv_11','cv_12','cv_13')) ,
+                           y=BLUP, fill=factor(max)))+ 
+  geom_col() +
+  ggtitle(x) +
+  xlab('Cultivar') + ylab('BLUPs') + scale_y_continuous(n.breaks=8)+
+  scale_fill_manual(values=c("red",
+                             '#00B8E5',
+                             "#00B81F"))+
+  theme_bw() + 
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        text = element_text(size=30),
+          legend.position="none",
+          axis.text.x=element_text(angle=90, hjust=1),plot.title = element_text(hjust = 0.5))
+ 
+
+print(plot1)
+}
+```
+
+### Sitio especifico: 
+
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 12}
+library(tidyverse)
+library(ggplot2)
+
+lc <- readxl::read_xlsx('datos/blup_Localidad_cv.xlsx')
+# head(lc)
+
+lc[lc$Loc_cult == 'Loc_1:cv_1',]$Loc_cult = 'L1_C1'
+lc[lc$Loc_cult == 'Loc_1:cv_2',]$Loc_cult = 'L1_C2'
+lc[lc$Loc_cult == 'Loc_1:cv_3',]$Loc_cult = 'L1_C3'
+lc[lc$Loc_cult == 'Loc_1:cv_4',]$Loc_cult = 'L1_C4'
+lc[lc$Loc_cult == 'Loc_1:cv_5',]$Loc_cult = 'L1_C5'
+lc[lc$Loc_cult == 'Loc_1:cv_6',]$Loc_cult = 'L1_C6'
+lc[lc$Loc_cult == 'Loc_1:cv_7',]$Loc_cult = 'L1_C7'
+lc[lc$Loc_cult == 'Loc_1:cv_8',]$Loc_cult = 'L1_C8'
+lc[lc$Loc_cult == 'Loc_1:cv_9',]$Loc_cult = 'L1_C9'
+lc[lc$Loc_cult == 'Loc_1:cv_10',]$Loc_cult = 'L1_C10'
+lc[lc$Loc_cult == 'Loc_1:cv_11',]$Loc_cult = 'L1_C11'
+lc[lc$Loc_cult == 'Loc_1:cv_12',]$Loc_cult = 'L1_C12'
+lc[lc$Loc_cult == 'Loc_1:cv_13',]$Loc_cult = 'L1_C13'
+
+
+lc[lc$Loc_cult == 'Loc_2:cv_1',]$Loc_cult = 'L2_C1'
+lc[lc$Loc_cult == 'Loc_2:cv_2',]$Loc_cult = 'L2_C2'
+lc[lc$Loc_cult == 'Loc_2:cv_3',]$Loc_cult = 'L2_C3'
+lc[lc$Loc_cult == 'Loc_2:cv_4',]$Loc_cult = 'L2_C4'
+lc[lc$Loc_cult == 'Loc_2:cv_5',]$Loc_cult = 'L2_C5'
+lc[lc$Loc_cult == 'Loc_2:cv_6',]$Loc_cult = 'L2_C6'
+lc[lc$Loc_cult == 'Loc_2:cv_7',]$Loc_cult = 'L2_C7'
+lc[lc$Loc_cult == 'Loc_2:cv_8',]$Loc_cult = 'L2_C8'
+lc[lc$Loc_cult == 'Loc_2:cv_9',]$Loc_cult = 'L2_C9'
+lc[lc$Loc_cult == 'Loc_2:cv_10',]$Loc_cult = 'L2_C10'
+lc[lc$Loc_cult == 'Loc_2:cv_11',]$Loc_cult = 'L2_C11'
+lc[lc$Loc_cult == 'Loc_2:cv_12',]$Loc_cult = 'L2_C12'
+lc[lc$Loc_cult == 'Loc_2:cv_13',]$Loc_cult = 'L2_C13'
+
+lc[lc$Loc_cult == 'Loc_3:cv_1',]$Loc_cult = 'L3_C1'
+lc[lc$Loc_cult == 'Loc_3:cv_2',]$Loc_cult = 'L3_C2'
+lc[lc$Loc_cult == 'Loc_3:cv_3',]$Loc_cult = 'L3_C3'
+lc[lc$Loc_cult == 'Loc_3:cv_4',]$Loc_cult = 'L3_C4'
+lc[lc$Loc_cult == 'Loc_3:cv_5',]$Loc_cult = 'L3_C5'
+lc[lc$Loc_cult == 'Loc_3:cv_6',]$Loc_cult = 'L3_C6'
+lc[lc$Loc_cult == 'Loc_3:cv_7',]$Loc_cult = 'L3_C7'
+lc[lc$Loc_cult == 'Loc_3:cv_8',]$Loc_cult = 'L3_C8'
+lc[lc$Loc_cult == 'Loc_3:cv_9',]$Loc_cult = 'L3_C9'
+lc[lc$Loc_cult == 'Loc_3:cv_10',]$Loc_cult = 'L3_C10'
+lc[lc$Loc_cult == 'Loc_3:cv_11',]$Loc_cult = 'L3_C11'
+lc[lc$Loc_cult == 'Loc_3:cv_12',]$Loc_cult = 'L3_C12'
+lc[lc$Loc_cult == 'Loc_3:cv_13',]$Loc_cult = 'L3_C13'
+
+lc[lc$Loc_cult == 'Loc_4:cv_1',]$Loc_cult = 'L4_C1'
+lc[lc$Loc_cult == 'Loc_4:cv_2',]$Loc_cult = 'L4_C2'
+lc[lc$Loc_cult == 'Loc_4:cv_3',]$Loc_cult = 'L4_C3'
+lc[lc$Loc_cult == 'Loc_4:cv_4',]$Loc_cult = 'L4_C4'
+lc[lc$Loc_cult == 'Loc_4:cv_5',]$Loc_cult = 'L4_C5'
+lc[lc$Loc_cult == 'Loc_4:cv_6',]$Loc_cult = 'L4_C6'
+lc[lc$Loc_cult == 'Loc_4:cv_7',]$Loc_cult = 'L4_C7'
+lc[lc$Loc_cult == 'Loc_4:cv_8',]$Loc_cult = 'L4_C8'
+lc[lc$Loc_cult == 'Loc_4:cv_9',]$Loc_cult = 'L4_C9'
+lc[lc$Loc_cult == 'Loc_4:cv_10',]$Loc_cult = 'L4_C10'
+lc[lc$Loc_cult == 'Loc_4:cv_11',]$Loc_cult = 'L4_C11'
+lc[lc$Loc_cult == 'Loc_4:cv_12',]$Loc_cult = 'L4_C12'
+lc[lc$Loc_cult == 'Loc_4:cv_13',]$Loc_cult = 'L4_C13'
+
+lc[lc$compuesto == 'a_g_d_Tocopherol',]$compuesto = 'Tocopheroles totales'
+lc[lc$compuesto == 'Linolenic_Acid',]$compuesto = 'Ácido graso linolénico'
+lc[lc$compuesto == 'Ácidos grasos Insaturados',]$compuesto = "Ácidos grasos insaturados"
+lc[lc$compuesto == "Ácidos grasos Saturados",]$compuesto = "Ácidos grasos saturados"
+lc[lc$compuesto == 'OSI',]$compuesto = 'Índice de estabilidad oxidativa'
+lc[lc$compuesto == 'Oil_content',]$compuesto = 'Contenido de aceite'
+
+lc$Localidad <- str_split_fixed(lc$Loc_cult,"_",2)[,1]
+lc$Cultivar <- str_split_fixed(lc$Loc_cult,"_",2)[,2]
+
+lc<-lc %>% 
+  filter(compuesto %in% c("Ácidos grasos insaturados","Ácidos grasos saturados",'Tocopheroles totales','Ácido graso linolénico','Índice de estabilidad oxidativa','Contenido de aceite'))
+
+lc$Loc_cult
+lc$max <- 0
+for (c in unique(lc$compuesto)){
+  for (l in unique(lc$Localidad)){ 
+    m = max(lc[(lc$compuesto == c) & (lc$Localidad == l),]$BLUP)
+    n = min(lc[(lc$compuesto == c) & (lc$Localidad == l),]$BLUP)
+    lc[(lc$compuesto == c) & (lc$Localidad == l) & (lc$BLUP >= m),]$max = 1
+    lc[(lc$compuesto == c) & (lc$Localidad == l) & (lc$BLUP <= n),]$max = -1
+  }
+}
+
+for (x in unique(lc$compuesto)){
+  # print(x)
+  lc1 <- lc[lc$compuesto == x,]
+  ## ordena de mayor a menor: fct_reorder(Loc_cult , BLUP,.desc=T)
+  plot1 <- ggplot(lc1 , aes (x=Cultivar , y=BLUP, fill=as.factor(max)))+ geom_bar(stat="identity") +
+    ggtitle(x) +theme(plot.title = element_text(hjust = 0.5)) +scale_fill_discrete() +
+    coord_flip()+ 
+    xlab('Cultivar') + ylab('BLUPs') + scale_y_continuous(n.breaks=8)+facet_wrap(~Localidad,nrow=1 ) + theme_bw() +
+    theme(legend.position="none") +
+    scale_fill_manual(values=c("red",
+                               '#00B8E5',
+                               "#00B81F"))+
+    theme_bw() + 
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        text = element_text(size=30),
+          legend.position="none",
+          axis.text.x=element_text(angle=90, hjust=1),plot.title = element_text(hjust = 0.5))
+  print(plot1)
+}
+```
+
+
+# 5) ¿Qué factores del clima explican la interacción cultivar-ambiente para el contenido de ácido linolénico?
+  
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+importance<- read.csv("datos/importance.csv")
+
+importance$relat <- round((importance$Normalized_Value*100),2)
+
+importance$variable <- c("Precipitación", "Temperatura máxima" , "Evapotranspiración", "Temperatura mínima", "Temperatura media")
+
+importance$relat_cat <- paste0(round(importance$relat,2), "%")
+
+ggplot(importance, aes(x=reorder(variable,relat), y=relat)) +
+  geom_bar(stat = "identity", width=0.7) +
+  coord_flip() +
+  theme_light() +
+  # ylab("Importancia")+
+  scale_y_continuous("Importancia relativa", breaks = seq(0,50,3))+
+  geom_text(aes(label=relat_cat), vjust=0,hjust=1, size=10, colour = "white")+
+  theme_bw() + 
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        text = element_text(size=30),
+          legend.position="none",axis.title.y=element_blank(),
+          axis.text.x=element_text(angle=0, hjust=1,size=25),plot.title = element_text(hjust = 0.5),
+        axis.text.y=element_text(size=25))
+```
+
+
+```{r, echo=F,message=F,warning=F,fig.height= 10, fig.width= 16}
+knitr::include_graphics("imagenes/PLS_REST.jpg")
+```
+
